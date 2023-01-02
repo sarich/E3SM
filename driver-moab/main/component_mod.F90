@@ -599,6 +599,7 @@ contains
        if (comp(eci)%iamin_cplcompid) then
 
           ! Map component domain from coupler to component processes
+          ! to send aream to components.
           if ( num_inst > 1) then
              mpi_tag = comp(eci)%cplcompid*100+eci*10+5
           else

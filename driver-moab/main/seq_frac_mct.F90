@@ -498,7 +498,7 @@ contains
           call seq_map_map(mapper_a2l, fractions_a, fractions_l, fldlist='afrac', norm=.false.)
        endif
 
-    end if
+    end if  ! end of (if lnd_present)
 
     ! Initialize fractions on ice grid/decomp (initialize ice fraction to zero)
 
@@ -611,7 +611,7 @@ contains
          tagValues = 0. 
          ierr = iMOAB_SetDoubleTagStorage ( mbixid, tagname, arrSize , ent_type, tagValues)
          deallocate(tagValues)
-         tagname = 'ofrac'//C_NULL_CHAR ! 'lfrin'
+         tagname = 'ofrac'//C_NULL_CHAR ! 'ofrac'
          allocate(tagValues(lSize) )
          tagValues = dom_i%data%rAttr(kf,:)
          kgg = mct_aVect_indexIA(dom_i%data ,"GlobGridNum" ,perrWith=subName)
@@ -642,7 +642,7 @@ contains
          ! end copy from rof
        endif
 
-    end if
+    end if  ! end of ice_present
 
     ! Initialize fractions on ocean grid/decomp (initialize ice fraction to zero)
     ! These are initialized the same as for ice
@@ -678,7 +678,7 @@ contains
           if (mboxid .ge. 0  ) then ! 
             ! we are using data from ofrac freom ice mesh !!!!
             lSize = mct_aVect_lSize(dom_i%data)
-            tagname = 'ofrac'//C_NULL_CHAR ! 'lfrin'
+            tagname = 'ofrac'//C_NULL_CHAR ! 'ofrac
             allocate(tagValues(lSize) )
             tagValues = dom_i%data%rAttr(kf,:)
             kgg = mct_aVect_indexIA(dom_i%data ,"GlobGridNum" ,perrWith=subName)
@@ -693,7 +693,7 @@ contains
             deallocate(GlobalIds)
             deallocate(tagValues)
           endif
-       else
+       else ! if no ice model
        ! stil need to TODO moab case
           ko = mct_aVect_indexRa(fractions_o,"ofrac",perrWith=subName)
           kf = mct_aVect_indexRA(dom_o%data ,"frac" ,perrWith=subName)
@@ -773,7 +773,7 @@ contains
           endif
    
           
-       endif
+       endif  ! end if atm present
 
 
 #ifdef MOABDEBUG
@@ -795,7 +795,7 @@ contains
           mapper_o2i => prep_ice_get_mapper_SFo2i()
           call seq_map_map(mapper_o2i,fractions_o,fractions_i,fldlist='afrac',norm=.false.)
        endif
-    end if
+    end if  ! end of if ocn present
 
     ! --- Set ofrac and lfrac on atm grid.  These should actually be mapo2a of
     !     ofrac and lfrac but we can't map lfrac from o2a due to masked mapping

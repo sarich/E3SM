@@ -1296,6 +1296,10 @@ contains
             orb_mvelpp=orb_mvelpp)
     endif
 
+    !----------------------------------------------------------
+    ! Initialize satvap table
+    !----------------------------------------------------------
+
     call seq_infodata_getData(infodata,                   &
          wv_sat_scheme=wv_sat_scheme,                     &
          wv_sat_transition_start=wv_sat_transition_start, &
@@ -1514,13 +1518,15 @@ contains
   ! Initialize coupler-component data
   !  if processor has cpl or model
   !    init the extended gsMap that describes comp on mpijoin
-  !    MOAB: send mesh from component to coupler, register combo app.
-  !    MOAB: Define a2xbot tags on some meshes REMOVE
+  !    MOAB: on component, send mesh.  on coupler, register coupler version
+  !       of app and receive mesh.
+  !    MOAB: on both, compute CommGraph between component and coupler versions.
+  !    MOAB: define c2x, x2c, domain tags
   !    init the mappers that go between comp and coupler instances of mesh
   !        these will be rearranger-type mappers since the meshs are the same
   !    initialize extended Avs to match extended GsMaps
   !    initialize extended domain
-  !    fill coupler domain with data using a map call (copy or rearrange only) 
+  !    fill coupler domain with data using a map_exchange call (copy or rearrange only)
   !---------------------------------------------------------------------------------------
     call t_startf('CPL:comp_init_cx_all')
     call t_adj_detailf(+2)
@@ -1975,10 +1981,10 @@ contains
     !----------------------------------------------------------
     ! Initialize all attribute vectors from other components that are mapped to each grid.
     ! e.g. for atmosphere, init l2x_ax, o2x_ax, i2x_ax
-    ! Initilize map for each transformaion. States and Fluxes, all sources.
+    ! MAP Initilize map for each transformaion. States and Fluxes, all sources.
     !      Includes reading weights from file
     ! MOAB: register coupler apps between components: e.g. OCN_ATM_COU
-    ! MOAB: compute intersection for each pair of grids on coupler but
+    ! MOAB: compute intersection intx for each pair of grids on coupler but
     !       not weights.
     !----------------------------------------------------------
 
@@ -1988,19 +1994,24 @@ contains
        call t_adj_detailf(+2)
        if (drv_threading) call seq_comm_setnthreads(nthreads_CPLID)
 
+       ! init maps for So2a, Sl2a, Si2a, Fo2a, Fl2a, Fi2a
        ! MOAB: calculate o2a intx, l2a intx for tri-grid
        call prep_atm_init(infodata, ocn_c2_atm, ice_c2_atm, lnd_c2_atm, iac_c2_lnd)
 
+       ! init maps for Sa2l, Fa2l, Fr2l, Sg2l, Fg2l
        ! MOABTODO:  a2l intx for tri-grid  r2l intx for bi-grid intx
        call prep_lnd_init(infodata, atm_c2_lnd, rof_c2_lnd, glc_c2_lnd, iac_c2_lnd)
 
+       ! init maps for Sa2o, Va2o, Fa2o, Fr2o, Rr2o_liq, Rr2o_ice, SFi2o, Rg2o_liq, Rg2o_ice, Sg2o, Fg2o, Sw2o
        ! MOAB: calc a2o intx, read file for r2o, 
        call prep_ocn_init(infodata, atm_c2_ocn, atm_c2_ice, ice_c2_ocn, rof_c2_ocn, wav_c2_ocn, glc_c2_ocn, glcshelf_c2_ocn)
 
+       ! init maps for SFo2i, Rg2i, Sg2i, Fg2i, Rr2i
        ! MOABTODO:  ocn 2 ice intx, r2i intx ?
        call prep_ice_init(infodata, ocn_c2_ice, glc_c2_ice, glcshelf_c2_ice, rof_c2_ice )
 
-       ! MOABTODO:  l2r intx, a2r intx
+       ! init maps for Sa2r, Fa2r, Fl2r
+       ! MOABTODO:  l2r intx, a2r intxn
        call prep_rof_init(infodata, lnd_c2_rof, atm_c2_rof)
 
        call prep_glc_init(infodata, lnd_c2_glc, ocn_c2_glcshelf)
@@ -2042,6 +2053,8 @@ contains
 
     !----------------------------------------------------------
     ! Update aream in domains where appropriate
+    ! Read from mapping files and rearrange if necessary.
+    ! MAP: aream between some coupler meshes
     !----------------------------------------------------------
 
     if (iamin_CPLID) then
@@ -2088,12 +2101,6 @@ contains
        call t_stopf ('CPL:init_domain_check')
     endif ! iamin_CPLID
 
-    !----------------------------------------------------------
-    !| Initialize area corrections based on aream (read in map_init) and area
-    !| Area correct component initialization output fields
-    !| Map initial component AVs from component to coupler pes
-    !----------------------------------------------------------
-
     areafact_samegrid = .false.
 #if (defined E3SM_SCM_REPLAY )
     if (.not.samegrid_alo) then
@@ -2108,6 +2115,12 @@ contains
     areafact_samegrid = .true.
 #endif
 
+    !----------------------------------------------------------
+    !| Initialize area corrections based on aream (read in map_init) and area
+    !| Area correct component initialization output fields
+    !| SEND (Rearrange) initial component AVs from component to coupler pes
+    ! MOABTODO:  add calls to send initial data.
+    !----------------------------------------------------------
     call t_startf ('CPL:init_areacor')
     call t_adj_detailf(+2)
 
@@ -2139,7 +2152,7 @@ contains
     call t_stopf ('CPL:init_areacor')
 
     !----------------------------------------------------------
-    !| global sum diagnostics for IC data
+    !| global sum diagnostics for initial data sent to coupler.
     !----------------------------------------------------------
 
     if (iamin_CPLID .and. info_debug > 1) then
@@ -2187,6 +2200,29 @@ contains
 
     !----------------------------------------------------------
     !| Initialize fractions
+    ! doma:  afrac=1
+    !   MOAB: add fraclist_a tags to mesh for atm and set afrac=1
+    ! domg: gfrac=frac from domain
+    ! doml: lfrin = frac from domain
+    !  MOAB  add fraclist_l tags to mesh and set lfrin
+    !  map afrac to lnd, lfrin to atm
+    ! domr: rfrac = frac from domain
+    !  MOAB add fraclist_r tags to mesh set rface
+    ! domw: set all to 1
+    ! domiac: set all to 1
+    ! domseaice: ofrac = fraom from dom_i
+    !  map ofrac to atm
+    !  MOAB add fraclist_i tags to mesh, set ofrac
+    ! domocn: set all to 0
+    !  MOAB  add fraclist_o and set to 0
+    !  map ofrac from i to o
+    !  MOAB set ofrac from dom_i to ocean
+    !  if no ice model:  set ofrac from dom_o and map to a
+    !  if atm map afrac from a to o
+    !  MOAB do mapping with lots of code
+    ! domatm:
+    !     if i or o: lfrac = 1 - ofrac
+    !     if land: lfrac = lfrin, ofrac = 1 - lfrin
     !----------------------------------------------------------
 
     if (iamin_CPLID) then
@@ -2235,7 +2271,9 @@ contains
     endif
 
     !----------------------------------------------------------
-    !| Initialize prep_aoflux_mod module variables
+    !| Initialize prep_aoflux_mod module variables xao_*x and
+    ! set to zero.
+    ! MOAB: add xao_fields tags to second copy of ocean mesh.
     !----------------------------------------------------------
 
     if (iamin_CPLID) then
@@ -2243,7 +2281,8 @@ contains
     endif
 
     !----------------------------------------------------------
-    !| Initialize atm/ocn flux component and compute ocean albedos
+    !| Initialize atm/ocn flux component. Allocate arrays for flux
+    ! calculation and set to 0.  Define a mask to use.
     !----------------------------------------------------------
 
     if (iamin_CPLID) then
@@ -2275,6 +2314,12 @@ contains
 
           endif
 
+    !----------------------------------------------------------
+    !| compute ocean albedos; update rad fractions
+    ! NOTE:  a2x_ox and xao_ox are zero on input.
+    ! MOAB: update rad fractions
+    !----------------------------------------------------------
+
           do exi = 1,num_inst_xao
              !tcx is this correct? relation between xao and frc for ifrad and ofrad
              efi = mod((exi-1),num_inst_frc) + 1
@@ -2305,25 +2350,25 @@ contains
        if (iamin_CPLID) then
 
           if (lnd_present) then
-             ! Get lnd output on atm grid
+             ! MAP lnd output to atm grid
              call prep_atm_calc_l2x_ax(fractions_lx, timer='CPL:init_atminit')
           endif
 
           if (ice_present) then
-             ! Get ice output on atm grid
+             ! MAP ice output to atm grid
              call prep_atm_calc_i2x_ax(fractions_ix, timer='CPL:init_atminit')
           endif
 
           if (ocn_present) then
-             ! Get ocn output on atm grid
+             ! MAP ocn output to atm grid
              call prep_atm_calc_o2x_ax(fractions_ox, timer='CPL:init_atminit')
           endif
 
           if (ocn_present) then
-             ! Get albedos on atm grid
+             ! MAP albedos to atm grid
              call prep_aoflux_calc_xao_ax(fractions_ox, flds='albedos', timer='CPL:init_atminit')
 
-             ! Get atm/ocn fluxes on atm grid
+             ! MAP atm/ocn fluxes to atm grid
              if (trim(aoflux_grid) == 'ocn') then
                 call prep_aoflux_calc_xao_ax(fractions_ox, flds='states_and_fluxes', &
                      timer='CPL:init_atminit')
@@ -2332,8 +2377,11 @@ contains
 
           if (lnd_present .or. ocn_present) then
              ! Merge input to atmosphere on coupler pes
+             ! Set x2a_ax to zero then fill it.
+             ! MOABTODO: form the atm merge
              xao_ax => prep_aoflux_get_xao_ax()
              if (associated(xao_ax)) then
+                ! will call prep_atm_merge for each instance.
                 call  prep_atm_mrg(infodata, &
                      fractions_ax=fractions_ax, xao_ax=xao_ax, timer_mrg='CPL:init_atminit')
              endif
@@ -2361,6 +2409,7 @@ contains
        endif
 
        ! Send atm input data from coupler pes to atm pes
+       ! MOAB: will send with seq_map_map
        if (atm_prognostic) then
           call component_exch(atm, flow='x2c', infodata=infodata, &
                infodata_string='cpl2atm_init')
@@ -2379,7 +2428,8 @@ contains
             seq_flds_x2c_fluxes=seq_flds_x2a_fluxes,                     &
             seq_flds_c2x_fluxes=seq_flds_a2x_fluxes)
 
-       ! Map atm output data from atm pes to cpl pes
+       ! Send atm output data from atm pes to cpl pes
+       ! MOAB:  will send with seq_map_map
        call component_exch(atm, flow='c2x', infodata=infodata, &
             infodata_string='atm2cpl_init')
 
@@ -2401,6 +2451,7 @@ contains
 
     !----------------------------------------------------------
     !| Read driver restart file, overwrite anything previously sent or computed
+    ! MOABTODO:  read restart
     !----------------------------------------------------------
 
     call t_startf('CPL:init_readrestart')

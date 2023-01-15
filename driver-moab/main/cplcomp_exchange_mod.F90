@@ -992,7 +992,7 @@ contains
       !
       use iMOAB, only: iMOAB_RegisterApplication, iMOAB_ReceiveMesh, iMOAB_SendMesh, &
       iMOAB_WriteMesh, iMOAB_DefineTagStorage, iMOAB_GetMeshInfo, &
-      iMOAB_SetIntTagStorage, iMOAB_FreeSenderBuffers, iMOAB_ComputeCommGraph, iMOAB_LoadMesh
+      iMOAB_SetIntTagStorage, iMOAB_FreeSenderBuffers, iMOAB_ComputeCommGraph, iMOAB_LoadMesh, iMOAB_DuplicateAppMesh
       ! use component_mod,      only: component_exch_moab
       !
       type(component_type), intent(inout) :: comp
@@ -1382,20 +1382,28 @@ contains
             call shr_sys_abort(subname//' ERROR in writing sea-ice')
          endif
 #endif
-   ! start copy from ocean code
-         !  send sea ice mesh to coupler
-         ierr = iMOAB_SendMesh(MPSIID, mpicom_join, mpigrp_cplid, id_join, partMethod)
-         if (ierr .ne. 0) then
-            write(logunit,*) subname,' error in sending sea ice mesh to coupler '
-            call shr_sys_abort(subname//' ERROR in sending sea ice mesh to coupler ')
-         endif
+   ! ! start copy from ocean code
+   !       !  send sea ice mesh to coupler
+   !       ierr = iMOAB_SendMesh(MPSIID, mpicom_join, mpigrp_cplid, id_join, partMethod)
+   !       if (ierr .ne. 0) then
+   !          write(logunit,*) subname,' error in sending sea ice mesh to coupler '
+   !          call shr_sys_abort(subname//' ERROR in sending sea ice mesh to coupler ')
+   !       endif
 
-         endif
-         if (MPI_COMM_NULL /= mpicom_new ) then !  we are on the coupler pes
+      endif
+      if (MPI_COMM_NULL /= mpicom_new ) then !  we are on the coupler pes
          appname = "COUPLE_MPASSI"//C_NULL_CHAR
          ! migrated mesh gets another app id, moab moab sea ice to coupler (mbix)
          ierr = iMOAB_RegisterApplication(trim(appname), mpicom_new, id_join, mbixid)
-         ierr = iMOAB_ReceiveMesh(mbixid, mpicom_join, mpigrp_old, id_old)
+         if ( ierr == 1 ) then
+            call shr_sys_abort( subname//' ERROR: cannot register ice on coupler' )
+         end if
+         !ierr = iMOAB_ReceiveMesh(mbixid, mpicom_join, mpigrp_old, id_old)
+         ierr = iMOAB_DuplicateAppMesh(mboxid, mbixid)
+         if ( ierr == 1 ) then
+            call shr_sys_abort( subname//' ERROR: cannot define copy ocean mesh app on coupler (to create ice)' )
+         end if
+         ! copy ocean instance
          tagtype = 1  ! dense, double
          numco = 1 !  one value per cell / entity
          tagname = trim(seq_flds_i2x_fields)//C_NULL_CHAR

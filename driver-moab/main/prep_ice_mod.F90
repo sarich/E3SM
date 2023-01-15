@@ -746,8 +746,10 @@ contains
     tagname = trim(seq_flds_a2x_fields)//C_NULL_CHAR
     arrsize = naflds * lsize !        allocate (a2x_om (lsize, naflds))
 ! LOOK at this line
-    write(logunit, *) 'MOAB ice merge ',mbixid,  naflds,lsize, ent_type, tagname
-    ierr = iMOAB_GetDoubleTagStorage ( mbixid, tagname, arrsize , ent_type, a2x_im(1,1))
+    write(logunit, *) 'MOAB ice merge ',mbixid,  naflds,lsize, ent_type, trim(tagname)
+    ! trick ! copy projection from ocean instance, instead of ice instance
+    !ierr = iMOAB_GetDoubleTagStorage ( mbixid, tagname, arrsize , ent_type, a2x_im(1,1))
+    ierr = iMOAB_GetDoubleTagStorage ( mboxid, tagname, arrsize , ent_type, a2x_im(1,1))
     if (ierr .ne. 0) then 
       write(logunit, *) 'MOAB error ', ierr
       call shr_sys_abort(subname//' error in getting a2x_im array ')
@@ -756,7 +758,9 @@ contains
 ! get the r2x data that was mapped to i
     tagname = trim(seq_flds_r2x_fields)//C_NULL_CHAR
     arrsize = nrflds * lsize !        allocate (a2x_om (lsize, naflds))
-    ierr = iMOAB_GetDoubleTagStorage ( mbixid, tagname, arrsize , ent_type, r2x_im(1,1))
+    !    ! trick ! copy projection from ocean instance, instead of ice instance
+    !ierr = iMOAB_GetDoubleTagStorage ( mbixid, tagname, arrsize , ent_type, r2x_im(1,1))
+    ierr = iMOAB_GetDoubleTagStorage ( mboxid, tagname, arrsize , ent_type, r2x_im(1,1))
     if (ierr .ne. 0) then 
       call shr_sys_abort(subname//' error in getting r2x_im array ')
     endif

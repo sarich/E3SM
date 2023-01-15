@@ -1435,14 +1435,14 @@ contains
          endif
 #endif
          endif
-         if (MPSIID .ge. 0) then  ! we are on component sea ice pes
-            context_id = id_join
-            ierr = iMOAB_FreeSenderBuffers(MPSIID, context_id)
-            if (ierr .ne. 0) then
-            write(logunit,*) subname,' error in freeing buffers '
-            call shr_sys_abort(subname//' ERROR in freeing buffers ')
-            endif
-         endif
+         ! if (MPSIID .ge. 0) then  ! we are on component sea ice pes
+         !    context_id = id_join
+         !    ierr = iMOAB_FreeSenderBuffers(MPSIID, context_id)
+         !    if (ierr .ne. 0) then
+         !    write(logunit,*) subname,' error in freeing buffers '
+         !    call shr_sys_abort(subname//' ERROR in freeing buffers ')
+         !    endif
+         ! endif
 
       endif
      ! rof

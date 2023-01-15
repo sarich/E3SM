@@ -1432,7 +1432,7 @@ contains
                write(logunit,*) subname,' error in computing comm graph for ice model '
                call shr_sys_abort(subname//' ERROR in computing comm graph for ice model ')
             endif
-   #ifdef MOABDEBUG
+#ifdef MOABDEBUG
       !      debug test
             outfile = 'recSeaIce.h5m'//C_NULL_CHAR
             wopts   = ';PARALLEL=WRITE_PART'//C_NULL_CHAR !
@@ -1442,7 +1442,7 @@ contains
                write(logunit,*) subname,' error in writing sea ice mesh on coupler '
                call shr_sys_abort(subname//' ERROR in writing sea ice mesh on coupler ')
             endif
-   #endif
+#endif
          endif
          ! if (MPSIID .ge. 0) then  ! we are on component sea ice pes
          !    context_id = id_join

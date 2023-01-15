@@ -1224,6 +1224,7 @@ contains
                write(logunit,*) subname,' error in defining tags o2x on coupler'
                call shr_sys_abort(subname//' ERROR in defining tags o2x on coupler ')
             endif
+
             ! need also to define seq_flds_x2o_fields on coupler instance, and on ocean comp instance
             tagname = trim(seq_flds_x2o_fields)//C_NULL_CHAR 
             ierr = iMOAB_DefineTagStorage(mboxid, tagname, tagtype, numco,  tagindex )
@@ -1401,18 +1402,31 @@ contains
          tagname = trim(seq_flds_i2x_fields)//C_NULL_CHAR
          ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
          if ( ierr == 1 ) then
-            call shr_sys_abort( subname//' ERROR: cannot define tags for ice on coupler' )
+            call shr_sys_abort( subname//' ERROR: cannot define i2x tags for ice on coupler' )
          end if
+
+         tagname = trim(seq_flds_a2x_fields)//C_NULL_CHAR
+         ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
+         if ( ierr == 1 ) then
+            call shr_sys_abort( subname//' ERROR: cannot define a2x tags for ice on coupler' )
+         end if
+
+         tagname = trim(seq_flds_r2x_fields)//C_NULL_CHAR
+         ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
+         if ( ierr == 1 ) then
+            call shr_sys_abort( subname//' ERROR: cannot define r2x tags for ice on coupler' )
+         end if
+
          tagname = trim(seq_flds_x2i_fields)//C_NULL_CHAR
          ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
          if ( ierr == 1 ) then
-            call shr_sys_abort( subname//' ERROR: cannot define tags for ice on coupler' )
+            call shr_sys_abort( subname//' ERROR: cannot define x2i tags for ice on coupler' )
          end if
 
          tagname = trim(seq_flds_dom_fields)//C_NULL_CHAR
          ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
          if (ierr .ne. 0) then
-            write(logunit,*) subname,' error in defining tags seq_flds_dom_fields on ice on coupler '
+            write(logunit,*) subname,' error in defining tags domain on ice on coupler '
             call shr_sys_abort(subname//' ERROR in defining tags ')
          endif
 #ifdef MOABDEBUG

@@ -1374,13 +1374,13 @@ contains
 
          if (MPI_COMM_NULL /= mpicom_old ) then ! it means we are on the component p
 #ifdef MOABDEBUG
-         outfile = 'wholeSeaIce.h5m'//C_NULL_CHAR
-         wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
-         ierr = iMOAB_WriteMesh(MPSIID, outfile, wopts)
-         if (ierr .ne. 0) then
-            write(logunit,*) subname,' error in writing sea-ice'
-            call shr_sys_abort(subname//' ERROR in writing sea-ice')
-         endif
+            outfile = 'wholeSeaIce.h5m'//C_NULL_CHAR
+            wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+            ierr = iMOAB_WriteMesh(MPSIID, outfile, wopts)
+            if (ierr .ne. 0) then
+               write(logunit,*) subname,' error in writing sea-ice'
+               call shr_sys_abort(subname//' ERROR in writing sea-ice')
+            endif
 #endif
    ! ! start copy from ocean code
    !       !  send sea ice mesh to coupler
@@ -1390,50 +1390,59 @@ contains
    !          call shr_sys_abort(subname//' ERROR in sending sea ice mesh to coupler ')
    !       endif
 
-      endif
-      if (MPI_COMM_NULL /= mpicom_new ) then !  we are on the coupler pes
-         appname = "COUPLE_MPASSI"//C_NULL_CHAR
-         ! migrated mesh gets another app id, moab moab sea ice to coupler (mbix)
-         ierr = iMOAB_RegisterApplication(trim(appname), mpicom_new, id_join, mbixid)
-         if ( ierr == 1 ) then
-            call shr_sys_abort( subname//' ERROR: cannot register ice on coupler' )
-         end if
-         !ierr = iMOAB_ReceiveMesh(mbixid, mpicom_join, mpigrp_old, id_old)
-         ierr = iMOAB_DuplicateAppMesh(mboxid, mbixid)
-         if ( ierr == 1 ) then
-            call shr_sys_abort( subname//' ERROR: cannot define copy ocean mesh app on coupler (to create ice)' )
-         end if
-         ! copy ocean instance
-         tagtype = 1  ! dense, double
-         numco = 1 !  one value per cell / entity
-         tagname = trim(seq_flds_i2x_fields)//C_NULL_CHAR
-         ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
-         if ( ierr == 1 ) then
-            call shr_sys_abort( subname//' ERROR: cannot define tags for ice on coupler' )
-         end if
-         tagname = trim(seq_flds_x2i_fields)//C_NULL_CHAR
-         ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
-         if ( ierr == 1 ) then
-            call shr_sys_abort( subname//' ERROR: cannot define tags for ice on coupler' )
-         end if
+         endif
+         if (MPI_COMM_NULL /= mpicom_new ) then !  we are on the coupler pes
+            appname = "COUPLE_MPASSI"//C_NULL_CHAR
+            ! migrated mesh gets another app id, moab moab sea ice to coupler (mbix)
+            ierr = iMOAB_RegisterApplication(trim(appname), mpicom_new, id_join, mbixid)
+            if ( ierr == 1 ) then
+               call shr_sys_abort( subname//' ERROR: cannot register ice on coupler' )
+            end if
+            !ierr = iMOAB_ReceiveMesh(mbixid, mpicom_join, mpigrp_old, id_old)
+            ierr = iMOAB_DuplicateAppMesh(mboxid, mbixid)
+            if ( ierr == 1 ) then
+               call shr_sys_abort( subname//' ERROR: cannot define copy ocean mesh app on coupler (to create ice)' )
+            end if
+            ! copy ocean instance
+            tagtype = 1  ! dense, double
+            numco = 1 !  one value per cell / entity
+            tagname = trim(seq_flds_i2x_fields)//C_NULL_CHAR
+            ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
+            if ( ierr == 1 ) then
+               call shr_sys_abort( subname//' ERROR: cannot define tags for ice on coupler' )
+            end if
+            tagname = trim(seq_flds_x2i_fields)//C_NULL_CHAR
+            ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
+            if ( ierr == 1 ) then
+               call shr_sys_abort( subname//' ERROR: cannot define tags for ice on coupler' )
+            end if
 
-         tagname = trim(seq_flds_dom_fields)//C_NULL_CHAR
-         ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
-         if (ierr .ne. 0) then
-            write(logunit,*) subname,' error in defining tags seq_flds_dom_fields on ice on coupler '
-            call shr_sys_abort(subname//' ERROR in defining tags ')
-         endif
-#ifdef MOABDEBUG
-   !      debug test
-         outfile = 'recSeaIce.h5m'//C_NULL_CHAR
-         wopts   = ';PARALLEL=WRITE_PART'//C_NULL_CHAR !
-   !      write out the mesh file to disk
-         ierr = iMOAB_WriteMesh(mbixid, trim(outfile), trim(wopts))
-         if (ierr .ne. 0) then
-            write(logunit,*) subname,' error in writing sea ice mesh on coupler '
-            call shr_sys_abort(subname//' ERROR in writing sea ice mesh on coupler ')
-         endif
-#endif
+            tagname = trim(seq_flds_dom_fields)//C_NULL_CHAR
+            ierr = iMOAB_DefineTagStorage(mbixid, tagname, tagtype, numco,  tagindex )
+            if (ierr .ne. 0) then
+               write(logunit,*) subname,' error in defining tags seq_flds_dom_fields on ice on coupler '
+               call shr_sys_abort(subname//' ERROR in defining tags ')
+            endif
+            ! we need to compute comm graph between ice comp and ice on coupler
+            typeA = 3 ! fv 
+            typeB = 3 ! fv 
+            ierr = iMOAB_ComputeCommGraph( MPSIID, mbixid, mpicom_join, mpigrp_old, mpigrp_cplid, &
+               typeA, typeB, id_old, id_join) 
+            if (ierr .ne. 0) then
+               write(logunit,*) subname,' error in computing comm graph for ice model '
+               call shr_sys_abort(subname//' ERROR in computing comm graph for ice model ')
+            endif
+   #ifdef MOABDEBUG
+      !      debug test
+            outfile = 'recSeaIce.h5m'//C_NULL_CHAR
+            wopts   = ';PARALLEL=WRITE_PART'//C_NULL_CHAR !
+      !      write out the mesh file to disk
+            ierr = iMOAB_WriteMesh(mbixid, trim(outfile), trim(wopts))
+            if (ierr .ne. 0) then
+               write(logunit,*) subname,' error in writing sea ice mesh on coupler '
+               call shr_sys_abort(subname//' ERROR in writing sea ice mesh on coupler ')
+            endif
+   #endif
          endif
          ! if (MPSIID .ge. 0) then  ! we are on component sea ice pes
          !    context_id = id_join

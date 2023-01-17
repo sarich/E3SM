@@ -831,7 +831,7 @@ contains
 
     call ice_import_moab()
 #endif 
-    call ice_import_mct(x2i_i, errorCode)  
+    !call ice_import_mct(x2i_i, errorCode)  
     if (errorCode /= 0) then
        call mpas_log_write('Error in ice_import_mct', MPAS_LOG_CRIT)
     endif
@@ -1168,7 +1168,7 @@ contains
       call ice_import_moab()
 #endif
       ! Import state from coupler
-      call ice_import_mct(x2i_i, ierr)
+      !call ice_import_mct(x2i_i, ierr)
 
       ! Post coupling calls
       block => domain % blocklist

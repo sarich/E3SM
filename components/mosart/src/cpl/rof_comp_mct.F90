@@ -450,7 +450,7 @@ contains
 
     call rof_import_moab( )
 #endif
-    call rof_import_mct( x2r_r)
+   ! call rof_import_mct( x2r_r)
     call t_stopf ('lc_rof_import')
 
     ! Run mosart (input is *runin, output is rtmCTL%runoff)
@@ -462,7 +462,7 @@ contains
 
     ! Map roff data to MCT datatype (input is rtmCTL%runoff, output is r2x_r)
     call t_startf ('lc_rof_export')
-    call rof_export_mct( r2x_r )
+    !call rof_export_mct( r2x_r )
 #ifdef HAVE_MOAB
     ! Map roff data to MOAB datatype ; load fields/tags in MOAB from rtmCTL%runoff 
     call rof_export_moab()

@@ -902,7 +902,7 @@ contains
        call mpas_log_write('Error in ocn_import_moab', MPAS_LOG_CRIT)
     endif
 #endif
-    call ocn_import_mct(x2o_o, errorCode)  
+    !call ocn_import_mct(x2o_o, errorCode)  
     if (errorCode /= 0) then
        call mpas_log_write('Error in ocn_import_mct', MPAS_LOG_CRIT)
     endif
@@ -1050,7 +1050,7 @@ contains
       endif
 #endif
       ! Import state from coupler
-      call ocn_import_mct(x2o_o, ierr)
+      !call ocn_import_mct(x2o_o, ierr)
 
       ! Ensures MPAS AM write/compute startup steps are performed
       call ocn_analysis_compute_startup(domain_ptr, ierr)

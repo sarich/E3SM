@@ -577,9 +577,9 @@ contains
 
 #ifdef HAVE_MOAB
     call lnd_import_moab( bounds, atm2lnd_vars, glc2lnd_vars)
+#else
+    call lnd_import( bounds, x2l_l%rattr, atm2lnd_vars, glc2lnd_vars)
 #endif
-
-    !call lnd_import( bounds, x2l_l%rattr, atm2lnd_vars, glc2lnd_vars)
     call t_stopf ('lc_lnd_import')
 
     ! Use infodata to set orbital values if updated mid-run

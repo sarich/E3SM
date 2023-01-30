@@ -467,10 +467,9 @@ CONTAINS
 
 #ifdef HAVE_MOAB
           call atm_import_moab(cam_in)
-#endif    
-          ! move moab import before cam import
-          ! so the cam import takes precedence, and fixes eventual problems in moab import     
-          !call atm_import( x2a_a%rattr, cam_in )
+#else 
+          call atm_import( x2a_a%rattr, cam_in )
+#endif  
           call cam_run1 ( cam_in, cam_out ) 
           call atm_export( cam_out, a2x_a%rattr )
 #ifdef HAVE_MOAB
@@ -627,10 +626,10 @@ CONTAINS
 #endif
 
 #ifdef HAVE_MOAB
-     call atm_import_moab(cam_in)
+    call atm_import_moab(cam_in)
+#else
+    call atm_import( x2a_a%rattr, cam_in )
 #endif
-   ! move moab import before regular atm import, so it would hopefully not be a problem
-     !call atm_import( x2a_a%rattr, cam_in )
     call t_stopf  ('CAM_import')
     
     ! Cycle over all time steps in the atm coupling interval

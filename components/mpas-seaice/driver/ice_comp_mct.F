@@ -828,10 +828,10 @@ contains
     enddo
     call mct_list_clean(temp_list)
 #endif
-
     call ice_import_moab()
+#else
+    call ice_import_mct(x2i_i, errorCode)  
 #endif 
-    !call ice_import_mct(x2i_i, errorCode)  
     if (errorCode /= 0) then
        call mpas_log_write('Error in ice_import_mct', MPAS_LOG_CRIT)
     endif
@@ -1166,9 +1166,10 @@ contains
     call mct_list_clean(temp_list)
 #endif
       call ice_import_moab()
-#endif
+#else
       ! Import state from coupler
-      !call ice_import_mct(x2i_i, ierr)
+      call ice_import_mct(x2i_i, ierr)
+#endif
 
       ! Post coupling calls
       block => domain % blocklist

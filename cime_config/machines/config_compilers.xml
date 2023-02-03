@@ -717,6 +717,21 @@ flags should be captured within MPAS CMake files.
   <SUPPORTS_CXX>TRUE</SUPPORTS_CXX>
 </compiler>
 
+<compiler MACH="anlgce_c01" COMPILER="gnu">
+  <NETCDF_C_PATH>$ENV{NETCDF_C_PATH}</NETCDF_C_PATH>
+  <NETCDF_FORTRAN_PATH>$ENV{NETCDF_FORTRAN_PATH}</NETCDF_FORTRAN_PATH>
+  <NETCDF_PATH>$ENV{NETCDF_PATH}</NETCDF_PATH>
+  <PNETCDF_PATH>$ENV{PNETCDF_PATH}</PNETCDF_PATH>
+  <MOAB_PATH>/nfs/gce/projects/sigma/3rdparty/moab/moab_Oct2022</MOAB_PATH>
+  <SLIBS>
+    <append>$SHELL{$ENV{NETCDF_FORTRAN_PATH}/bin/nf-config --flibs} -llapack -lblas</append>
+  </SLIBS>
+  <SUPPORTS_CXX>TRUE</SUPPORTS_CXX>
+  <CXX_LIBS>
+    <base>-lstdc++ </base>
+  </CXX_LIBS>
+</compiler>
+
 <compiler MACH="anvil" COMPILER="gnu">
   <CPPDEFS>
     <append COMP_NAME="gptl"> -DHAVE_NANOTIME -DBIT64 -DHAVE_SLASHPROC -DHAVE_GETTIMEOFDAY  </append>

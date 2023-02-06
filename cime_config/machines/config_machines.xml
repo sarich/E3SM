@@ -1636,6 +1636,45 @@
     </environment_variables>
   </machine>
 
+<machine MACH="anlgce_c01">
+    <DESC>Linux workstation compute-01 for ANL GCE</DESC>
+    <NODENAME_REGEX>compute-386-01</NODENAME_REGEX>
+    <OS>LINUX</OS>
+    <COMPILERS>gnu</COMPILERS>
+    <MPILIBS>mpich</MPILIBS>
+    <CIME_OUTPUT_ROOT>/nfs/gce/projects/sigma/output_E3SM</CIME_OUTPUT_ROOT>
+    <DIN_LOC_ROOT>/nfs/gce/projects/climate/inputdata</DIN_LOC_ROOT>
+    <DIN_LOC_ROOT_CLMFORC>/nfs/gce/projects/climate/inputdata/atm/datm7</DIN_LOC_ROOT_CLMFORC>
+    <DOUT_S_ROOT>$CIME_OUTPUT_ROOT/archive/$CASE</DOUT_S_ROOT>
+    <BASELINE_ROOT>/nfs/gce/projects/climate/e3sm/baselines/$COMPILER</BASELINE_ROOT>
+    <CCSM_CPRNC>/nfs/gce/projects/climate/e3sm/cprnc/build/cprnc</CCSM_CPRNC>
+    <GMAKE>make</GMAKE>
+    <GMAKE_J>4</GMAKE_J>
+    <TESTS>e3sm_developer</TESTS>
+    <BATCH_SYSTEM>none</BATCH_SYSTEM>
+    <SUPPORTED_BY>iulian at anl dot gov</SUPPORTED_BY>
+    <MAX_TASKS_PER_NODE>4</MAX_TASKS_PER_NODE>
+    <MAX_MPITASKS_PER_NODE>4</MAX_MPITASKS_PER_NODE>
+    <mpirun mpilib="default">
+      <executable>mpirun</executable>
+      <arguments>
+        <arg name="num_tasks"> -np $TOTALPES</arg>
+      </arguments>
+    </mpirun>
+    <module_system type="none">
+    </module_system>
+    <RUNDIR>$CIME_OUTPUT_ROOT/$CASE/run</RUNDIR>
+    <EXEROOT>$CIME_OUTPUT_ROOT/$CASE/bld</EXEROOT>
+    <environment_variables>
+            <env name="PATH">/nfs/gce/projects/sigma/TPL/mpich/3.3.2/gcc/gqvgacu/bin:/nfs/gce/projects/sigma/TPL/hdf5/1.10.7/gcc/jt2dk27/bin:/nfs/gce/projects/sigma/TPL/netcdf-c/4.7.4/gcc/ni6vjbp/bin:/nfs/gce/projects/sigma/TPL/parallel-netcdf/1.12.1/gcc/dlk5yzw/bin:/nfs/gce/projects/sigma/TPL/netcdf-fortran/4.5.3/gcc/dfwogbw/bin:$ENV{PATH}</env>
+            <env name="LD_LIBRARY_PATH">/nfs/gce/projects/sigma/TPL/hdf5/1.10.7/gcc/jt2dk27/lib:/nfs/gce/projects/sigma/TPL/mpich/3.3.2/gcc/gqvgacu/lib:/nfs/gce/projects/sigma/TPL/netcdf-c/4.7.4/gcc/ni6vjbp/lib:/nfs/gce/projects/sigma/TPL/parallel-netcdf/1.12.1/gcc/dlk5yzw/lib:/nfs/gce/projects/sigma/TPL/netcdf-fortran/4.5.3/gcc/dfwogbw/lib:$ENV{LD_LIBRARY_PATH}</env>
+      <env name="NETCDF_PATH">/nfs/gce/projects/sigma/TPL/netcdf-c/4.7.4/gcc/ni6vjbp</env>
+      <env name="PNETCDF_PATH">/nfs/gce/projects/sigma/TPL/parallel-netcdf/1.12.1/gcc/dlk5yzw</env>
+      <env name="NETCDF_C_PATH">/nfs/gce/projects/sigma/TPL/netcdf-c/4.7.4/gcc/ni6vjbp</env>
+      <env name="NETCDF_FORTRAN_PATH">/nfs/gce/projects/sigma/TPL/netcdf-fortran/4.5.3/gcc/dfwogbw</env>
+    </environment_variables>
+</machine>
+
   <machine MACH="sandiatoss3">
     <DESC>SNL clust</DESC>
     <NODENAME_REGEX>(skybridge|chama)</NODENAME_REGEX>

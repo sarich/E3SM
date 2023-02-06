@@ -1311,7 +1311,8 @@ contains
             ! iulian's laptop
             !outfile = '/media/iulian/ExtraDrive1/inputdata/share/meshes/lnd/land_np4pg2_oQU480_230112.h5m'//C_NULL_CHAR
             ropts = 'PARALLEL=READ_PART;PARTITION=PARALLEL_PARTITION;PARALLEL_RESOLVE_SHARED_ENTS'//C_NULL_CHAR
-            outfile = '/home/iulian/rofscrip/land_np4pg2_oQU480_230112.h5m'//C_NULL_CHAR
+            !outfile = '/home/iulian/rofscrip/land_np4pg2_oQU480_230112.h5m'//C_NULL_CHAR
+            outfile = '/nfs/gce/projects/climate/inputdata/share/meshes/lnd/land_ne4pg2_oQU480_230112.h5m'//C_NULL_CHAR
             nghlay = 0 ! no ghost layers 
             ierr = iMOAB_LoadMesh(mblxid, outfile, ropts, nghlay)
             if (ierr .ne. 0) then
@@ -1472,7 +1473,9 @@ contains
             ! /nfs/gce/projects/climate/inputdata/share/meshes/rof/SCRIPgrid_2x2_nomask_c210211.nc'//C_NULL_CHAR
             ! iulian's laptop
             !outfile = '/media/iulian/ExtraDrive1/inputdata/share/meshes/rof/SCRIPgrid_2x2_nomask_c210211.nc'//C_NULL_CHAR
-            outfile = '/home/iulian/rofscrip/SCRIPgrid_2x2_nomask_c210211.nc'//C_NULL_CHAR
+            ! outfile = '/home/iulian/rofscrip/SCRIPgrid_2x2_nomask_c210211.nc'//C_NULL_CHAR
+            !outfile = '/home/iulian/rofscrip/SCRIPgrid_2x2_nomask_p64_c230119.h5m'//C_NULL_CHAR
+            outfile = '/nfs/gce/projects/climate/inputdata/share/meshes/rof/SCRIPgrid_2x2_nomask_c210211.nc'//C_NULL_CHAR
             ropts = 'PARALLEL=READ_PART;PARTITION_METHOD=RCBZOLTAN'//C_NULL_CHAR
          
             nghlay = 0 ! no ghost layers 

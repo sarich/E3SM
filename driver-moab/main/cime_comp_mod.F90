@@ -132,6 +132,10 @@ module cime_comp_mod
   use seq_flux_mct, only: seq_flux_init_mct, seq_flux_initexch_mct, seq_flux_ocnalb_mct
   use seq_flux_mct, only: seq_flux_atmocn_mct, seq_flux_atmocnexch_mct, seq_flux_readnl_mct
 
+#ifdef HAVE_MOAB
+  use seq_flux_moab, only: seq_flux_init_moab
+#endif
+
   use seq_flux_mct, only: seq_flux_atmocn_moab ! will set the ao fluxes on atm or ocn coupler mesh
 
   ! domain fraction routines
@@ -2343,6 +2347,7 @@ contains
           if (trim(aoflux_grid) == 'ocn') then
 
              call seq_flux_init_mct(ocn(ens1), fractions_ox(ens1))
+             call seq_flux_init_moab(ocn(ens1), fractions_ox(ens1))
 
           elseif (trim(aoflux_grid) == 'atm') then
 

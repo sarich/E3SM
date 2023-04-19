@@ -45,6 +45,7 @@ module mpas_moabmesh
     integer, dimension(:), pointer :: indexToVertexID, indexToCellID
     real(kind=RKIND), dimension(:), pointer :: xVertex, yVertex, zVertex
     real (kind=RKIND), dimension(:), pointer :: xCell, yCell, zCell, areaCell
+    real (kind=RKIND), dimension(:), pointer :: lonCell, latCell
     logical, pointer :: on_a_sphere, is_periodic
     real(kind=RKIND), pointer :: x_period, y_period
     integer, pointer :: nCellsSolve, nEdgesSolve, nVerticesSolve
@@ -59,7 +60,10 @@ module mpas_moabmesh
     character*100  tagname, lnum
     integer tagtype, numco, tag_sto_len, ent_type, tagindex, currentVertex
     real (kind=RKIND), pointer :: sphere_radius
+    real (kind=RKIND)  :: r2d, pii
 
+    pii = 2. * asin(1.0)
+    r2d = 180.0/pii 
     c_comm = domain % dminfo % comm
     write(lnum,"(I0.2)")ext_comp_id
     appname = 'MPAS_MB_'//trim(lnum)//C_NULL_CHAR
@@ -73,7 +77,7 @@ module mpas_moabmesh
     nblocks = 0
     block => domain % blocklist
     do while (associated(block)) !{{{
-       nblocks = nblocks + 1
+       nblocks = nblocks + 1 ! this is executed only once, so why the while ? we check later that nblocks is exactly 1 :(
         ! allocate scratch memory 
        call mpas_pool_get_subpool(block % structs, 'mesh', meshPool)
        call mpas_pool_get_array(meshPool, 'xVertex', xVertex)
@@ -94,6 +98,8 @@ module mpas_moabmesh
        call mpas_pool_get_dimension(meshPool, 'nEdgesSolve', nEdgesSolve)
        call mpas_pool_get_dimension(meshPool, 'nVerticesSolve', nVerticesSolve)
        call mpas_pool_get_array(meshPool, 'areaCell', areaCell)
+       call mpas_pool_get_array(meshPool, 'latCell', latCell)
+       call mpas_pool_get_array(meshPool, 'lonCell', lonCell)
        call mpas_pool_get_config(meshPool, 'sphere_radius', sphere_radius)
 !       call mpas_pool_get_array(meshPool, 'xCell', xCell)
 !       call mpas_pool_get_array(meshPool, 'yCell', yCell)
@@ -198,6 +204,34 @@ module mpas_moabmesh
        ierr = iMOAB_SetDoubleTagStorage ( pid, tagname, nCellsSolve , ent_type, data)
        if (ierr > 0 )  &
           call errorout(ierr,'Error: fail to set area tag ')
+
+       n=0
+       do ic=1, nCellsSolve
+         n= n+1
+         data(n)=latCell(ic) * r2d
+       enddo
+       tagname='lat'//C_NULL_CHAR
+       ierr = iMOAB_SetDoubleTagStorage ( pid, tagname, nCellsSolve , ent_type, data)
+       if (ierr > 0 )  &
+          call errorout(ierr,'Error: fail to set lat tag ')
+
+       n=0
+       do ic=1, nCellsSolve
+         n= n+1
+         data(n)=lonCell(ic) * r2d
+       enddo
+       tagname='lon'//C_NULL_CHAR
+       ierr = iMOAB_SetDoubleTagStorage ( pid, tagname, nCellsSolve , ent_type, data)
+       if (ierr > 0 )  &
+          call errorout(ierr,'Error: fail to set lon tag ')
+        
+       ! set mask tag to 1
+       data = 1._r8
+       tagname = 'mask'//C_NULL_CHAR
+       ierr = iMOAB_SetDoubleTagStorage ( pid, tagname, nCellsSolve , ent_type, data)
+       if (ierr > 0 )  &
+          call errorout(ierr,'Error: fail to set mask tag ')
+
 
        ! set it to the same area, but change it eventually with the area from mapping routing (tempestremap for MOAB)
        ! comment it 

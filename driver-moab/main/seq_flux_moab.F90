@@ -235,20 +235,25 @@ contains
     type(mct_aVect), intent(in)  :: fractions
     !
     ! Local variables
-    !
-    type(mct_gsMap), pointer :: gsMap
-    type(mct_gGrid), pointer :: dom
-    integer(in)              :: nloc
+    integer :: moabAppId
+    integer     nvert(3), nvise(3), nbl(3), nsurf(3), nvisBC(3)
+    integer(in)              :: nloc ! will get it with getmeshinfo
     integer                  :: ko,ki     ! fractions indices
     integer                  :: ier
     real(r8), pointer        :: rmask(:)  ! ocn domain mask
     character(*),parameter   :: subName =   '(seq_flux_init_moab) '
     !-----------------------------------------------------------------------
 
-    gsmap => component_get_gsmap_cx(comp)
-    dom   => component_get_dom_cx(comp)
 
-    nloc = mct_avect_lsize(dom%data)
+    ! if we are on ocean or atm flux calculations
+    if (comp%oneletterid == 'a' ) then
+       moabAppId = mbaxid ! atm 
+    elseif (comp%oneletterid == 'o' ) then
+       moabAppId = mboxid ! ocn 
+    endif
+    ierr  = iMOAB_GetMeshInfo ( moabAppId, nvert, nvise, nbl, nsurf, nvisBC )
+
+    nloc = nvise(1) ! number of cells
 
     ! Input fields atm
     allocate( zbot(nloc),stat=ier)

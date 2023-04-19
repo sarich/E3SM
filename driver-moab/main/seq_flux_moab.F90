@@ -2,6 +2,7 @@ module seq_flux_moab
 
   use shr_kind_mod,      only: r8 => shr_kind_r8, in=>shr_kind_in
   use shr_sys_mod,       only: shr_sys_abort
+  use shr_kind_mod,      only: CX => shr_kind_CX, CXX => shr_kind_CXX
   use shr_flux_mod,      only: shr_flux_atmocn, shr_flux_atmocn_ua, shr_flux_atmocn_diurnal, shr_flux_adjust_constants
   use shr_orb_mod,       only: shr_orb_params, shr_orb_cosz, shr_orb_decl
   use shr_mct_mod,       only: shr_mct_queryConfigFile, shr_mct_sMatReaddnc
@@ -241,6 +242,10 @@ contains
     integer                  :: ko,ki     ! fractions indices
     integer                  :: ier
     real(r8), pointer        :: rmask(:)  ! ocn domain mask
+
+    integer                  :: tagtype, numco, tagindex
+    character(CXX)           :: tagName
+
     character(*),parameter   :: subName =   '(seq_flux_init_moab) '
     !-----------------------------------------------------------------------
 

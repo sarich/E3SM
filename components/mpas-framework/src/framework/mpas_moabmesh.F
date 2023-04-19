@@ -226,7 +226,7 @@ module mpas_moabmesh
           call errorout(ierr,'Error: fail to set lon tag ')
         
        ! set mask tag to 1
-       data = 1._r8
+       data(:) = 1.
        tagname = 'mask'//C_NULL_CHAR
        ierr = iMOAB_SetDoubleTagStorage ( pid, tagname, nCellsSolve , ent_type, data)
        if (ierr > 0 )  &

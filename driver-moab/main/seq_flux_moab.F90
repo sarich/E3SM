@@ -233,16 +233,16 @@ contains
     ! Arguments
     !
     type(component_type), intent(in) :: comp
-    type(mct_aVect), intent(in)  :: fractions
+    !type(mct_aVect), intent(in)  :: fractions
     !
     ! Local variables
     integer :: moabAppId
     integer     nvert(3), nvise(3), nbl(3), nsurf(3), nvisBC(3)
     integer(in)              :: nloc ! will get it with getmeshinfo
     integer                  :: ko,ki     ! fractions indices
-    integer                  :: ier, ierr, ent_type
+    integer                  :: ier, ierr, ent_type, i
     real(r8), allocatable    :: rmask(:)  ! ocn domain mask
-
+    real(r8), allocatable    :: fracts_mb(:,:)  ! ocn domain mask
     integer                  :: tagtype, numco, tagindex
     character(CXX)           :: tagName
 
@@ -518,6 +518,13 @@ contains
    !  where (fractions%rAttr(ko,:)+fractions%rAttr(ki,:) <= 0.0_r8) mask(:) = 0
    ! look at ofrac and ifrac on ocean, to decide if more masks are 0 ?
 
+   ! retrieve fractions ofrac and ifrac
+    tagname ='ofrac:ifrac'//C_NULL_CHAR
+    allocate(fracts_mb(nloc, 2))
+    ierr = iMOAB_GetDoubleTagStorage( mboxid, tagname,  nloc*2, ent_type, fracts_mb(1,1))
+    do i=1,nloc
+       if (fracts_mb(i,1)+fracts_mb(i,2) <= 0.0_r8) mask(i) = 0
+    enddo
     emask = mask
 
     fluxsetting = trim(fluxsetting_atmocn)

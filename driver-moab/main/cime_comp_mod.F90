@@ -2347,7 +2347,7 @@ contains
           if (trim(aoflux_grid) == 'ocn') then
 
              call seq_flux_init_mct(ocn(ens1), fractions_ox(ens1))
-             call seq_flux_init_moab(ocn(ens1), fractions_ox(ens1))
+             call seq_flux_init_moab(ocn(ens1))
 
           elseif (trim(aoflux_grid) == 'atm') then
 

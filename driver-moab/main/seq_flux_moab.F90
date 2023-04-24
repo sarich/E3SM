@@ -11,7 +11,7 @@ module seq_flux_moab
   use seq_comm_mct,     only : mbofxid ! iMOAB id for mpas ocean migrated mesh to coupler pes, just for xao flux calculations
   use seq_comm_mct,     only : mbaxid ! iMOAB app id for atm phys grid on cpl pes
 
-  use prep_aoflux_mod,   only: prep_aoflux_get_xao_omct, prep_aoflux_get_xao_amct
+  ! use prep_aoflux_mod,   only: prep_aoflux_get_xao_omct, prep_aoflux_get_xao_amct
 
   use iMOAB, only :  iMOAB_SetDoubleTagStorageWithGid, iMOAB_WriteMesh, iMOAB_SetDoubleTagStorage, iMOAB_GetDoubleTagStorage
   use iMOAB, only : iMOAB_GetMeshInfo
@@ -49,8 +49,8 @@ module seq_flux_moab
   ! Private data
   !--------------------------------------------------------------------------
 
-  real(r8), pointer       :: lats(:)  ! latitudes  (degrees)
-  real(r8), pointer       :: lons(:)  ! longitudes (degrees)
+  real(r8), allocatable       :: lats(:)  ! latitudes  (degrees)
+  real(r8), allocatable       :: lons(:)  ! longitudes (degrees)
   integer(in),allocatable :: mask(:)  ! ocn domain mask: 0 <=> inactive cell
   integer(in),allocatable :: emask(:) ! ocn mask on exchange grid decomp
 
@@ -226,7 +226,7 @@ module seq_flux_moab
 contains
   !===============================================================================
 
-  subroutine seq_flux_init_moab(comp, fractions)
+  subroutine seq_flux_init_moab(comp)
 
     !-----------------------------------------------------------------------
     !
@@ -240,8 +240,8 @@ contains
     integer     nvert(3), nvise(3), nbl(3), nsurf(3), nvisBC(3)
     integer(in)              :: nloc ! will get it with getmeshinfo
     integer                  :: ko,ki     ! fractions indices
-    integer                  :: ier
-    real(r8), pointer        :: rmask(:)  ! ocn domain mask
+    integer                  :: ier, ierr, ent_type
+    real(r8), allocatable    :: rmask(:)  ! ocn domain mask
 
     integer                  :: tagtype, numco, tagindex
     character(CXX)           :: tagName
@@ -471,10 +471,22 @@ contains
     mask = 0.0_r8
 
     ! Get lat, lon, mask, which is time-invariant
+    tagname = 'lat'//C_NULL_CHAR
+    ent_type = 1 ! cells for ocean mesh
+    ierr = iMOAB_GetDoubleTagStorage( mboxid, tagname,  nloc, ent_type, lats(1))
+    if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in getting lats  '
+      call shr_sys_abort(subname//' ERROR in  getting lats ')
+    endif
+    tagname = 'lon'//C_NULL_CHAR
+    ent_type = 1 ! cells for ocean mesh
+    ierr = iMOAB_GetDoubleTagStorage( mboxid, tagname,  nloc, ent_type, lons(1))
+    if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in getting lons  '
+      call shr_sys_abort(subname//' ERROR in  getting lons ')
+    endif
+
     allocate(rmask(nloc),stat=ier)
-    if(ier/=0) call mct_die(subName,'allocate rmask',ier)
-    call mct_gGrid_exportRAttr(dom, 'lat' , lats , nloc)
-    call mct_gGrid_exportRAttr(dom, 'lon' , lons , nloc)
 
     ! setup the compute mask.
     ! prefer to compute just where ocean exists, so setup a mask here.
@@ -491,14 +503,20 @@ contains
     mask = 1
 
     ! use domain mask first
-    call mct_gGrid_exportRAttr(dom, 'mask', rmask, nloc)
+    tagname = 'mask'//C_NULL_CHAR
+    ierr = iMOAB_GetDoubleTagStorage( mboxid, tagname,  nloc, ent_type, rmask(1))
+    if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in getting mask  '
+      call shr_sys_abort(subname//' ERROR in  getting mask ')
+    endif
     where (rmask < 0.5_r8) mask = 0   ! like nint
     deallocate(rmask)
 
-    ! then check ofrac + ifrac
-    ko = mct_aVect_indexRA(fractions,"ofrac")
-    ki = mct_aVect_indexRA(fractions,"ifrac")
-    where (fractions%rAttr(ko,:)+fractions%rAttr(ki,:) <= 0.0_r8) mask(:) = 0
+   !  ! then check ofrac + ifrac
+   !  ko = mct_aVect_indexRA(fractions,"ofrac")
+   !  ki = mct_aVect_indexRA(fractions,"ifrac")
+   !  where (fractions%rAttr(ko,:)+fractions%rAttr(ki,:) <= 0.0_r8) mask(:) = 0
+   ! look at ofrac and ifrac on ocean, to decide if more masks are 0 ?
 
     emask = mask
 

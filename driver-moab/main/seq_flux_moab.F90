@@ -127,6 +127,8 @@ module seq_flux_moab
   real(r8),parameter :: const_deg2rad = const_pi/180.0_r8  ! deg to rads
 
   ! albedo reference variables - set via namelist
+  ! moab does not need another version? Is this copy ok? Can it be read twice ?
+  
   real(r8)  :: seq_flux_mct_albdif = -1.0_r8  ! albedo, diffuse
   real(r8)  :: seq_flux_mct_albdir = -1.0_r8  ! albedo, direct
   real(r8)  :: seq_flux_atmocn_minwind ! minimum wind temperature for atmocn flux routines
@@ -531,6 +533,8 @@ contains
 
   end subroutine seq_flux_init_moab
 
+
+! this has nothing related to moab
   !===============================================================================
 
   subroutine seq_flux_readnl_moab (nmlfile, ID)

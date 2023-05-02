@@ -128,7 +128,7 @@ module seq_flux_moab
 
   ! albedo reference variables - set via namelist
   ! moab does not need another version? Is this copy ok? Can it be read twice ?
-  
+
   real(r8)  :: seq_flux_mct_albdif = -1.0_r8  ! albedo, diffuse
   real(r8)  :: seq_flux_mct_albdir = -1.0_r8  ! albedo, direct
   real(r8)  :: seq_flux_atmocn_minwind ! minimum wind temperature for atmocn flux routines
@@ -825,8 +825,8 @@ contains
   end subroutine seq_flux_initexch_moab
 
   !===============================================================================
-
-  subroutine seq_flux_ocnalb_moab( infodata, ocn, a2x_o, fractions_o, xao_o )
+! a2x_o, xao_o used for indexing only; not for data
+  subroutine seq_flux_ocnalb_moab( infodata, ocn , a2x_o, fractions_o, xao_o )
 
     !-----------------------------------------------------------------------
     !
@@ -903,17 +903,19 @@ contains
        index_a2x_Faxa_swvdr = mct_aVect_indexRA(a2x_o,'Faxa_swvdr')
        index_a2x_Faxa_swvdf = mct_aVect_indexRA(a2x_o,'Faxa_swvdf')
 
-       nloc_o  = mct_ggrid_lsize(dom_o)
-       klat = mct_gGrid_indexRA(dom_o,"lat" ,dieWith=subName)
-       klon = mct_gGrid_indexRA(dom_o,"lon" ,dieWith=subName)
-       allocate( lats(nloc_o),stat=ier )
-       if(ier/=0) call mct_die(subName,'allocate lats',ier)
-       allocate( lons(nloc_o),stat=ier )
-       if(ier/=0) call mct_die(subName,'allocate lons',ier)
-       do n = 1,nloc_o
-          lats(n) = dom_o%data%rAttr(klat,n)
-          lons(n) = dom_o%data%rAttr(klon,n)
-       enddo
+      ! lats and lons are already initialized in init; do not need them again here
+
+      !  nloc_o  = mct_ggrid_lsize(dom_o)
+      !  klat = mct_gGrid_indexRA(dom_o,"lat" ,dieWith=subName)
+      !  klon = mct_gGrid_indexRA(dom_o,"lon" ,dieWith=subName)
+      !  allocate( lats(nloc_o),stat=ier )
+      !  if(ier/=0) call mct_die(subName,'allocate lats',ier)
+      !  allocate( lons(nloc_o),stat=ier )
+      !  if(ier/=0) call mct_die(subName,'allocate lons',ier)
+      !  do n = 1,nloc_o
+      !     lats(n) = dom_o%data%rAttr(klat,n)
+      !     lons(n) = dom_o%data%rAttr(klon,n)
+      !  enddo
       
        if (mboxid .ge. 0) then
           ! allocate a local small array to copy a tag from another 

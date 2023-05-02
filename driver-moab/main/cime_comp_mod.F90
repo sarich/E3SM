@@ -133,7 +133,7 @@ module cime_comp_mod
   use seq_flux_mct, only: seq_flux_atmocn_mct, seq_flux_atmocnexch_mct, seq_flux_readnl_mct
 
 #ifdef HAVE_MOAB
-  use seq_flux_moab, only: seq_flux_init_moab, seq_flux_readnl_moab
+  use seq_flux_moab, only: seq_flux_init_moab, seq_flux_readnl_moab, seq_flux_initexch_moab, seq_flux_ocnalb_moab
 #endif
 
   use seq_flux_mct, only: seq_flux_atmocn_moab ! will set the ao fluxes on atm or ocn coupler mesh
@@ -2359,6 +2359,8 @@ contains
 
              call shr_sys_abort(subname//' aoflux_grid = exch not validated')
              call seq_flux_initexch_mct(atm(ens1), ocn(ens1), mpicom_cplid, cplid)
+             ! is this needed? maybe not like flux namelist
+             call seq_flux_initexch_moab(atm(ens1), ocn(ens1), mpicom_cplid, cplid)
 
           else
              call shr_sys_abort(subname//' aoflux_grid = '//trim(aoflux_grid)//' not available')

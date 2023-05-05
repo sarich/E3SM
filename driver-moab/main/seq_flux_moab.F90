@@ -825,7 +825,9 @@ contains
   end subroutine seq_flux_initexch_moab
 
   !===============================================================================
-! a2x_o, xao_o used for indexing only; not for data
+  ! a2x_o, xao_o used for indexing only; not for data
+  !  this routine is called at init stage and at runtime too
+  !  output of this routine is xao_o fluxes and fractions on ocean
   subroutine seq_flux_ocnalb_moab( infodata, ocn , a2x_o, fractions_o, xao_o )
 
     !-----------------------------------------------------------------------
@@ -923,19 +925,22 @@ contains
           arrSize = nvise(1) * 2 !  we have ifrac and ofrac to copy to ifrad, ofrad
           allocate(tagValues(arrSize) )
        endif
-
-       if (mbofxid .ge. 0) then
-          lSize = mct_aVect_lSize(xao_o)
-          allocate(tagValues2(lSize) )
-          allocate(GlobalIds(lSize) )
-          kgg = mct_aVect_indexIA(dom_o%data ,"GlobGridNum" ,perrWith=subName)
-          GlobalIds = dom_o%data%iAttr(kgg,:)
-       endif
+   ! we do not need GlobalIds , because the result will be directly on mbofxid ? 
+      !  if (mbofxid .ge. 0) then
+      !     lSize = mct_aVect_lSize(xao_o)
+      !     allocate(tagValues2(lSize) )
+      !     allocate(GlobalIds(lSize) )
+      !     kgg = mct_aVect_indexIA(dom_o%data ,"GlobGridNum" ,perrWith=subName)
+      !     GlobalIds = dom_o%data%iAttr(kgg,:)
+      !  endif
 
        first_call = .false.
     endif
     ent_type = 1 ! cells for mpas ocean
 
+    ! allocate xao_om as an array similar to xao_o attribute vector; carry out 
+    !   computations there, and then set the tag
+    !  
     if (flux_albav) then
 
        do n=1,nloc_o
@@ -1022,39 +1027,39 @@ contains
     end if   ! flux_albav
 
 ! update MOAB versions
-    if (mbofxid > 0 ) then
-       tagname = 'So_avsdr'//C_NULL_CHAR
-       tagValues2 = xao_o%rAttr(index_xao_So_avsdr,:)
-       ierr = iMOAB_SetDoubleTagStorageWithGid ( mbofxid, tagname, lSize , ent_type, tagValues2, GlobalIds )
-       if (ierr .ne. 0) then
-          write(logunit,*) subname,' error in setting avsdr on ocnf moab instance  '
-          call shr_sys_abort(subname//' ERROR in setting avsdr on ocnf moab instance ')
-       endif
+   !  if (mbofxid > 0 ) then
+   !     tagname = 'So_avsdr'//C_NULL_CHAR
+   !     tagValues2 = xao_o%rAttr(index_xao_So_avsdr,:)
+   !     ierr = iMOAB_SetDoubleTagStorageWithGid ( mbofxid, tagname, lSize , ent_type, tagValues2, GlobalIds )
+   !     if (ierr .ne. 0) then
+   !        write(logunit,*) subname,' error in setting avsdr on ocnf moab instance  '
+   !        call shr_sys_abort(subname//' ERROR in setting avsdr on ocnf moab instance ')
+   !     endif
 
-       tagname = 'So_anidr'//C_NULL_CHAR
-       tagValues2 = xao_o%rAttr(index_xao_So_anidr,:)
-       ierr = iMOAB_SetDoubleTagStorageWithGid ( mbofxid, tagname, lSize , ent_type, tagValues2, GlobalIds )
-       if (ierr .ne. 0) then
-          write(logunit,*) subname,' error in setting anidr on ocnf moab instance  '
-          call shr_sys_abort(subname//' ERROR in setting anidr on ocnf moab instance ')
-       endif
+   !     tagname = 'So_anidr'//C_NULL_CHAR
+   !     tagValues2 = xao_o%rAttr(index_xao_So_anidr,:)
+   !     ierr = iMOAB_SetDoubleTagStorageWithGid ( mbofxid, tagname, lSize , ent_type, tagValues2, GlobalIds )
+   !     if (ierr .ne. 0) then
+   !        write(logunit,*) subname,' error in setting anidr on ocnf moab instance  '
+   !        call shr_sys_abort(subname//' ERROR in setting anidr on ocnf moab instance ')
+   !     endif
 
-       tagname = 'So_avsdf'//C_NULL_CHAR
-       tagValues2 = xao_o%rAttr(index_xao_So_avsdf,:)
-       ierr = iMOAB_SetDoubleTagStorageWithGid ( mbofxid, tagname, lSize , ent_type, tagValues2, GlobalIds )
-       if (ierr .ne. 0) then
-          write(logunit,*) subname,' error in setting avsdf on ocnf moab instance  '
-          call shr_sys_abort(subname//' ERROR in setting avsdf on ocnf moab instance ')
-       endif
+   !     tagname = 'So_avsdf'//C_NULL_CHAR
+   !     tagValues2 = xao_o%rAttr(index_xao_So_avsdf,:)
+   !     ierr = iMOAB_SetDoubleTagStorageWithGid ( mbofxid, tagname, lSize , ent_type, tagValues2, GlobalIds )
+   !     if (ierr .ne. 0) then
+   !        write(logunit,*) subname,' error in setting avsdf on ocnf moab instance  '
+   !        call shr_sys_abort(subname//' ERROR in setting avsdf on ocnf moab instance ')
+   !     endif
 
-       tagname = 'So_anidf'//C_NULL_CHAR
-       tagValues2 = xao_o%rAttr(index_xao_So_anidf,:)
-       ierr = iMOAB_SetDoubleTagStorageWithGid ( mbofxid, tagname, lSize , ent_type, tagValues2, GlobalIds )
-       if (ierr .ne. 0) then
-          write(logunit,*) subname,' error in setting anidf on ocnf moab instance  '
-          call shr_sys_abort(subname//' ERROR in setting anidf on ocnf moab instance ')
-       endif
-    endif
+   !     tagname = 'So_anidf'//C_NULL_CHAR
+   !     tagValues2 = xao_o%rAttr(index_xao_So_anidf,:)
+   !     ierr = iMOAB_SetDoubleTagStorageWithGid ( mbofxid, tagname, lSize , ent_type, tagValues2, GlobalIds )
+   !     if (ierr .ne. 0) then
+   !        write(logunit,*) subname,' error in setting anidf on ocnf moab instance  '
+   !        call shr_sys_abort(subname//' ERROR in setting anidf on ocnf moab instance ')
+   !     endif
+   !  endif
 
     !--- update current ifrad/ofrad values if albedo was updated
     if (update_alb) then

@@ -138,6 +138,10 @@ module seq_flux_moab
   real(r8),  allocatable :: tagValues2(:) ! used for copying tag values for albedos
   integer ,    allocatable :: GlobalIds(:) ! used for setting values associated with ids
 
+  ! similar to a2x_om and xao_om from ocn merge routines; these are local to this routine; should we use the ones allocated there
+  ! TODO :: 
+  real(r8), allocatable :: xao_om(:,:), a2x_om(:,:)  ! lsize_o, nxflds, naflds,  ? 
+
   ! Coupler field indices
 
   integer :: index_a2x_Sa_z
@@ -871,10 +875,11 @@ contains
     integer nvert(3), nvise(3), nbl(3), nsurf(3), nvisBC(3) ! for moab info
     character(CXX) ::tagname
     integer :: ent_type, ierr, kgg
-    integer , save  :: arrSize ! local size for moab tag arrays (number of cells locally)
+    integer   :: arrSize ! local size for moab tag arrays (number of cells locally)
 
     logical,save        :: first_call = .true.
     integer, save       :: lSize
+    integer, save       :: naflds, nxflds ! will be determined at first run, using an mct method
     !
     character(*),parameter :: subName =   '(seq_flux_ocnalb_moab) '
     !
@@ -923,6 +928,7 @@ contains
           ! allocate a local small array to copy a tag from another 
           ierr  = iMOAB_GetMeshInfo ( mboxid, nvert, nvise, nbl, nsurf, nvisBC );
           arrSize = nvise(1) * 2 !  we have ifrac and ofrac to copy to ifrad, ofrad
+          lSize = nvise(1) ! number of ocean cells
           allocate(tagValues(arrSize) )
        endif
    ! we do not need GlobalIds , because the result will be directly on mbofxid ? 
@@ -933,13 +939,24 @@ contains
       !     kgg = mct_aVect_indexIA(dom_o%data ,"GlobGridNum" ,perrWith=subName)
       !     GlobalIds = dom_o%data%iAttr(kgg,:)
       !  endif
-
+       nxflds = mct_aVect_nRAttr(xao_o)
+       naflds = mct_aVect_nRAttr(a2x_o)
+       !arrsize = nxflds * lsize !        allocate (xao_om (lsize, nxflds))
+       allocate (xao_om(lsize, nxflds))
+       allocate (a2x_om(lsize, naflds))
        first_call = .false.
     endif
     ent_type = 1 ! cells for mpas ocean
 
     ! allocate xao_om as an array similar to xao_o attribute vector; carry out 
     !   computations there, and then set the tag
+    tagname = trim(seq_flds_xao_fields)//C_NULL_CHAR
+    arrsize = nxflds * lsize !        allocate (xao_om (lsize, nxflds))
+    ierr = iMOAB_GetDoubleTagStorage ( mbofxid, tagname, arrsize , ent_type, xao_om(1,1))
+    if (ierr .ne. 0) then
+      call shr_sys_abort(subname//' error in getting xao_om array ')
+    endif
+    
     !  
     if (flux_albav) then
 
@@ -956,10 +973,10 @@ contains
           !anidf = anidr
           !avsdf = anidr
 
-          xao_o%rAttr(index_xao_So_avsdr,n) = avsdr
-          xao_o%rAttr(index_xao_So_anidr,n) = anidr
-          xao_o%rAttr(index_xao_So_avsdf,n) = avsdf
-          xao_o%rAttr(index_xao_So_anidf,n) = anidf
+          xao_om(n,index_xao_So_avsdr) = avsdr
+          xao_om(n,index_xao_So_anidr) = anidr
+          xao_om(n,index_xao_So_avsdf) = avsdf
+          xao_om(n,index_xao_So_anidf) = anidf
        end do
        update_alb = .true.
 
@@ -968,24 +985,24 @@ contains
        !--- flux_atmocn needs swdn & swup = swdn*(-albedo)
        !--- swdn & albedos are time-aligned  BEFORE albedos get updated below ---
        do n=1,nloc_o
-          avsdr = xao_o%rAttr(index_xao_So_avsdr,n)
-          anidr = xao_o%rAttr(index_xao_So_anidr,n)
-          avsdf = xao_o%rAttr(index_xao_So_avsdf,n)
-          anidf = xao_o%rAttr(index_xao_So_anidf,n)
-          swupc = a2x_o%rAttr(index_a2x_Faxa_swndr,n)*(-anidr) &
-               & + a2x_o%rAttr(index_a2x_Faxa_swndf,n)*(-anidf) &
-               & + a2x_o%rAttr(index_a2x_Faxa_swvdr,n)*(-avsdr) &
-               & + a2x_o%rAttr(index_a2x_Faxa_swvdf,n)*(-avsdf)
-          swdnc = a2x_o%rAttr(index_a2x_Faxa_swndr,n) &
-               & + a2x_o%rAttr(index_a2x_Faxa_swndf,n) &
-               & + a2x_o%rAttr(index_a2x_Faxa_swvdr,n) &
-               & + a2x_o%rAttr(index_a2x_Faxa_swvdf,n)
+          avsdr = xao_om(n,index_xao_So_avsdr)
+          anidr = xao_om(n,index_xao_So_anidr)
+          avsdf = xao_om(n,index_xao_So_avsdf)
+          anidf = xao_om(n,index_xao_So_anidf)
+          swupc = a2x_om(n,index_a2x_Faxa_swndr)*(-anidr) &
+               & + a2x_om(n,index_a2x_Faxa_swndf)*(-anidf) &
+               & + a2x_om(n,index_a2x_Faxa_swvdr)*(-avsdr) &
+               & + a2x_om(n,index_a2x_Faxa_swvdf)*(-avsdf)
+          swdnc = a2x_om(n,index_a2x_Faxa_swndr) &
+               & + a2x_om(n,index_a2x_Faxa_swndf) &
+               & + a2x_om(n,index_a2x_Faxa_swvdr) &
+               & + a2x_om(n,index_a2x_Faxa_swvdf)
           if ( anidr == 1.0_r8 ) then ! dark side of earth
              swupc = 0.0_r8
              swdnc = 0.0_r8
           end if
-          xao_o%rAttr(index_xao_Faox_swdn,n) = swdnc
-          xao_o%rAttr(index_xao_Faox_swup,n) = swupc
+          xao_om(n,index_xao_Faox_swdn) = swdnc
+          xao_om(n,index_xao_Faox_swup) = swupc
        end do
 
        ! Solar declination
@@ -1016,10 +1033,10 @@ contains
                 avsdf = 1.0_r8
              end if
 
-             xao_o%rAttr(index_xao_So_avsdr,n) = avsdr
-             xao_o%rAttr(index_xao_So_anidr,n) = anidr
-             xao_o%rAttr(index_xao_So_avsdf,n) = avsdf
-             xao_o%rAttr(index_xao_So_anidf,n) = anidf
+             xao_om(n,index_xao_So_avsdr) = avsdr
+             xao_om(n,index_xao_So_anidr) = anidr
+             xao_om(n,index_xao_So_avsdf) = avsdf
+             xao_om(n,index_xao_So_anidf) = anidf
 
           end do   ! nloc_o
           update_alb = .true.
@@ -1061,6 +1078,7 @@ contains
    !     endif
    !  endif
 
+   ! update 
     !--- update current ifrad/ofrad values if albedo was updated
     if (update_alb) then
        kx = mct_aVect_indexRA(fractions_o,"ifrac")

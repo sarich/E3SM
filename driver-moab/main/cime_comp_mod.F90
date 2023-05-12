@@ -4301,7 +4301,15 @@ contains
   !----------------------------------------------------------------------------------
 
   subroutine cime_run_atmocn_setup(hashint)
-    integer, intent(inout) :: hashint(:)
+#ifdef MOABDEBUG
+   use seq_comm_mct,        only: num_moab_exports  ! used to count the steps for moab files
+   use iMOAB, only: iMOAB_WriteMesh
+   use seq_comm_mct , only : mboxid
+#endif
+   integer, intent(inout) :: hashint(:)
+#ifdef MOABDEBUG
+   character*32             :: outfile, wopts, lnum
+#endif
 
     ! call prep_ocn_calc_i2x_ox_moab() ! this does projection from ice to ocean on coupler, by simply matching
     if (iamin_CPLID) then
@@ -4314,11 +4322,34 @@ contains
        end if
 
        if (ocn_prognostic) then
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for degugging; TODO remove when figure out
+   outfile = 'OcnCplBeforeIceProj_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
+
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
           ! Map to ocn
           if (ice_c2_ocn) then
             call prep_ocn_calc_i2x_ox(timer='CPL:atmocnp_ice2ocn')
-
           endif
+#ifdef MOABDEBUG
+   ! this is temporary , for debugging; TODO remove when figure out
+   outfile = 'OcnCplAfterIceProj_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
+
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
           if (wav_c2_ocn) call prep_ocn_calc_w2x_ox(timer='CPL:atmocnp_wav2ocn')
           if (trim(cpl_seq_option(1:5)) == 'NUOPC') then
              if (rof_c2_ocn) call prep_ocn_calc_r2x_ox(timer='CPL:atmocnp_rof2ocn')

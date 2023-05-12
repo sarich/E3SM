@@ -1169,7 +1169,7 @@ subroutine prep_ocn_mrg_moab(infodata, xao_ox)
 ! all the rest will be needed for computation
 ! arrays will be allocated the first time, then filled with get tag values, merged, and set back to x2o ocean fields
 
-    character(*),parameter :: subName = '(prep_ocn_merge_moab) '
+    character(*),parameter :: subName = '(prep_ocn_mrg_moab) '
     !-----------------------------------------------------------------------
     ! fraclist_o = 'afrac:ifrac:ofrac:ifrad:ofrad'
     kif = 2 ! kif = mct_aVect_indexRa(fractions_o,"ifrac",perrWith=subName)
@@ -1454,7 +1454,14 @@ subroutine prep_ocn_mrg_moab(infodata, xao_ox)
 
     !call mct_aVect_zero(x2o_o)
     ! replace with something else; make all x2o_fields 0 ? TODO
-
+#ifdef MOABDEBUG
+    if (mboxid .ge. 0 ) then !  we are on coupler pes, for sure
+     write(lnum,"(I0.2)")num_moab_exports
+     outfile = 'OcnCplBefMm'//trim(lnum)//'.h5m'//C_NULL_CHAR
+     wopts   = ';PARALLEL=WRITE_PART'//C_NULL_CHAR !
+     ierr = iMOAB_WriteMesh(mboxid, trim(outfile), trim(wopts))
+   endif
+#endif
     !--- document copy operations ---
     if (first_time) then
        shared_fields_xao_x2o='' ! nothing in it yet

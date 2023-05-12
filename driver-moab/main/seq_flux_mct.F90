@@ -1791,7 +1791,7 @@ contains
         appId = mbaxid ! atm on coupler
         local_xao_mct => prep_aoflux_get_xao_amct()
      else if (comp%oneletterid == 'o') then
-        appId = mbofxid  ! atm phys
+        appId = mbofxid  ! this is the ocean instace for flux computation
         local_xao_mct => prep_aoflux_get_xao_omct()
      else
         call mct_die(subName,'call for either ocean or atm',1)
@@ -1805,6 +1805,19 @@ contains
      allocate(GlobalIdsLocal(nloc))
      GlobalIdsLocal = dom%data%iAttr(kgg,:)
 
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for degugging; TODO remove when figure out
+   outfile = 'OcnCplBeforeFlux_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
+
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
 
      do j = 1, listSize
        local_xao_mct(:, j) = xao%rAttr(j, :)
@@ -1829,6 +1842,16 @@ contains
  
       if (ierr .ne. 0) then
          write(logunit,*) subname,' error in writing mesh '
+         call shr_sys_abort(subname//' ERROR in writing mesh ')
+      endif
+
+      ! this is temporary , for degugging; TODO remove when figure
+      outfile = 'OcnCplAfterFlux_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+      wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+      ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
+ 
+      if (ierr .ne. 0) then
+         write(logunit,*) subname,' error in writing ocn cpl mesh '
          call shr_sys_abort(subname//' ERROR in writing mesh ')
       endif
 

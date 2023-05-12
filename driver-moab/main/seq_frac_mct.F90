@@ -326,7 +326,9 @@ contains
     integer idintx ! used for context for intx atm - ocn
     integer id_join ! used for example for atm%cplcompid
     integer :: mpicom ! we are on coupler PES here
+#ifdef MOABDEBUG
     character(30)            :: outfile, wopts
+#endif
 
 
     !----- formats -----
@@ -818,6 +820,7 @@ contains
   subroutine seq_frac_set(infodata, ice, ocn, fractions_a, fractions_i, fractions_o)
 
     use seq_comm_mct, only : mboxid !            iMOAB app id for ocn on cpl pes
+    use seq_comm_mct, only : num_moab_exports
 
     ! !INPUT/OUTPUT PARAMETERS:
     type(seq_infodata_type) , intent(in)    :: infodata
@@ -848,6 +851,10 @@ contains
     real(r8),    allocatable, save :: tagValuesOfrac(:) ! used for setting some tags
     integer ,    allocatable, save :: GlobalIds(:) ! used for setting values associated with ids
 
+#ifdef MOABDEBUG
+    character(30)            :: outfile, wopts, lnum
+#endif
+
     !----- formats -----
     character(*),parameter :: subName = '(seq_frac_set) '
 
@@ -867,7 +874,18 @@ contains
          atm_present=atm_present,       &
          ice_present=ice_present,       &
          ocn_present=ocn_present)
-
+#ifdef MOABDEBUG
+         wopts   = ';PARALLEL=WRITE_PART'//C_NULL_CHAR
+         write(lnum,"(I0.2)")num_moab_exports
+         if (mboxid .ge. 0  ) then
+             outfile = 'ocnCplFrBefore_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+             ierr = iMOAB_WriteMesh(mboxid, trim(outfile), trim(wopts))
+              if (ierr .ne. 0) then
+                 write(logunit,*) subname,' error in writing mesh '
+                 call shr_sys_abort(subname//' ERROR in writing mesh ')
+              endif
+         endif
+#endif
     dom_i => component_get_dom_cx(ice)
     i2x_i => component_get_c2x_cx(ice)
 
@@ -959,6 +977,19 @@ contains
           call seq_frac_check(fractions_a,'atm set')
        endif
     end if
+
+#ifdef MOABDEBUG
+    wopts   = ';PARALLEL=WRITE_PART'//C_NULL_CHAR
+    write(lnum,"(I0.2)")num_moab_exports
+    if (mboxid .ge. 0  ) then
+        outfile = 'ocnCplFr_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+        ierr = iMOAB_WriteMesh(mboxid, trim(outfile), trim(wopts))
+         if (ierr .ne. 0) then
+            write(logunit,*) subname,' error in writing mesh '
+            call shr_sys_abort(subname//' ERROR in writing mesh ')
+         endif
+    endif
+#endif
 
   end subroutine seq_frac_set
   !===============================================================================

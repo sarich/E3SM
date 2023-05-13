@@ -2432,12 +2432,36 @@ contains
              ! MAP lnd output to atm grid
              call prep_atm_calc_l2x_ax(fractions_lx, timer='CPL:init_atminit')
           endif
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for debugging; TODO remove when figure out
+   outfile = 'OcnCplAfterl2x_ax_init_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
 
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
           if (ice_present) then
              ! MAP ice output to atm grid
              call prep_atm_calc_i2x_ax(fractions_ix, timer='CPL:init_atminit')
           endif
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for debugging; TODO remove when figure out
+   outfile = 'OcnCplAfteri2x_ax_init_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
 
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
           if (ocn_present) then
              ! MAP ocn output to atm grid
              call prep_atm_calc_o2x_ax(fractions_ox, timer='CPL:init_atminit')

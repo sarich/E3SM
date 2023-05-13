@@ -174,6 +174,13 @@ module cime_comp_mod
 #ifdef HAVE_MOAB
   use component_mod,      only: component_init_areacor_moab
 #endif
+
+#ifdef MOABDEBUG
+   use seq_comm_mct,        only: num_moab_exports  ! used to count the steps for moab files
+   use iMOAB, only: iMOAB_WriteMesh
+   use seq_comm_mct , only : mboxid
+#endif
+
   use component_mod,      only: component_exch, component_diag
   use component_mod,      only: component_exch_moab
 
@@ -687,6 +694,11 @@ module cime_comp_mod
   character(*), parameter :: FormatD = '(A,": =============== ", A20,I10.8,I8,6x,   " ===============")'
   character(*), parameter :: FormatR = '(A,": =============== ", A31,F12.3,1x,  " ===============")'
   character(*), parameter :: FormatQ = '(A,": =============== ", A20,2F10.2,4x," ===============")'
+
+#ifdef MOABDEBUG
+    character*32             :: outfile, wopts, lnum
+#endif
+
   !===============================================================================
 contains
   !===============================================================================
@@ -1424,7 +1436,6 @@ contains
     use seq_flds_mod , only : seq_flds_x2a_fields, seq_flds_a2x_fields, seq_flds_l2x_fields, &
      seq_flds_o2x_fields, seq_flds_r2x_fields, seq_flds_i2x_fields
     use seq_comm_mct , only :  mphaid, mbaxid, mlnid, mblxid,  mrofid, mbrxid, mpoid, mboxid,  mpsiid, mbixid
-    use seq_comm_mct,        only: num_moab_exports  ! used to count the steps for moab files
 
 
 103 format( 5A )
@@ -2358,6 +2369,19 @@ contains
 
           endif
 
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for debugging; TODO remove when figure out
+   outfile = 'OcnCplAfterFluxInit_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
+
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
     !----------------------------------------------------------
     !| compute ocean albedos; update rad fractions
     ! NOTE:  a2x_ox and xao_ox are zero on input.
@@ -2379,7 +2403,19 @@ contains
           call t_stopf ('CPL:init_aoflux')
        endif
     endif
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for debugging; TODO remove when figure out
+   outfile = 'OcnCplAfterOcnAlb_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
 
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
     !----------------------------------------------------------
     !| ATM PREP for recalculation of initial solar
     !  Note that ocean albedos are ALWAYS CALCULATED on the ocean grid
@@ -2406,7 +2442,19 @@ contains
              ! MAP ocn output to atm grid
              call prep_atm_calc_o2x_ax(fractions_ox, timer='CPL:init_atminit')
           endif
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for debugging; TODO remove when figure out
+   outfile = 'OcnCplAftero2x_ax_init_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
 
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
           if (ocn_present) then
              ! MAP albedos to atm grid
              call prep_aoflux_calc_xao_ax(fractions_ox, flds='albedos', timer='CPL:init_atminit')
@@ -2417,7 +2465,19 @@ contains
                      timer='CPL:init_atminit')
              endif
           endif
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for debugging; TODO remove when figure out
+   outfile = 'OcnCplAfterAOFlux_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
 
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
           if (lnd_present .or. ocn_present) then
              ! Merge input to atmosphere on coupler pes
              ! Set x2a_ax to zero then fill it.
@@ -2466,8 +2526,9 @@ contains
              call seq_infodata_putData(infodata, atm_phase=2)
           endif
        enddo
-
+#ifdef MOABDEBUG
        num_moab_exports = num_moab_exports + 1
+#endif
        ! Run atm_init_mct with init phase of 2
        call component_init_cc(Eclock_a, atm, atm_init,                   &
             infodata, NLFilename,                                        &
@@ -2528,11 +2589,36 @@ contains
     !----------------------------------------------------------
     !| Map initial r2x_rx and g2x_gx to _ox, _ix and _lx
     !----------------------------------------------------------
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for degugging; TODO remove when figure out
+   outfile = 'OcnCplBeforeR2x_ox_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
 
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
     if (iamin_CPLID ) then
        if (rof_c2_ocn) then
           call prep_ocn_calc_r2x_ox(timer='CPL:init_rof2ocn')
        endif
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for degugging; TODO remove when figure out
+   outfile = 'OcnCplAfterR2x_ox_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
+
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
        if (glc_c2_ocn) then
           call prep_ocn_calc_g2x_ox(timer='CPL:init_glc2ocn')
        endif
@@ -2640,7 +2726,6 @@ contains
     use seq_comm_mct,        only: glc_layout, rof_layout, ocn_layout
     use seq_comm_mct,        only: wav_layout, esp_layout, iac_layout, num_inst_driver
     use seq_comm_mct,        only: seq_comm_inst
-    use seq_comm_mct,        only: num_moab_exports  ! used to count the steps for moab files
     use seq_pauseresume_mod, only: seq_resume_store_comp, seq_resume_get_files
     use seq_pauseresume_mod, only: seq_resume_free
 
@@ -2694,6 +2779,20 @@ contains
     force_stop = .false.
     force_stop_ymd = -1
     force_stop_tod = -1
+
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for degugging; TODO remove when figure out
+   outfile = 'OcnCplStartRun_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
+
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
 
     ! --- Write out performance data for initialization
     call seq_timemgr_EClockGetData( EClock_d, curr_ymd=ymd, curr_tod=tod)
@@ -2859,8 +2958,9 @@ contains
     Time_begin = mpi_wtime()
     Time_bstep = mpi_wtime()
     do while ( .not. stop_alarm)
-
+#ifdef MOABDEBUG
        num_moab_exports = num_moab_exports + 1
+#endif
        call t_startf('CPL:RUN_LOOP', hashint(1))
        call t_startf('CPL:CLOCK_ADVANCE')
 
@@ -3003,9 +3103,33 @@ contains
           call cime_comp_barriers(mpicom=mpicom_CPLID, timer='CPL:OCNPRE1_BARRIER')
           call t_drvstartf ('CPL:OCNPRE1',cplrun=.true.,barrier=mpicom_CPLID,hashint=hashint(3))
           if (drv_threading) call seq_comm_setnthreads(nthreads_CPLID)
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for degugging; TODO remove when figure out
+   outfile = 'OcnCplBefore_a2o_ox_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
 
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
           call prep_ocn_calc_a2x_ox(timer='CPL:ocnpre1_atm2ocn')
+#ifdef MOABDEBUG
+     ! debug out file
+   write(lnum,"(I0.2)")num_moab_exports
+   ! this is temporary , for degugging; TODO remove when figure out
+   outfile = 'OcnCplAfter_a2o_ox_'//trim(lnum)//'.h5m'//C_NULL_CHAR
+   wopts   = 'PARALLEL=WRITE_PART'//C_NULL_CHAR
+   ierr = iMOAB_WriteMesh(mboxid, outfile, wopts)
 
+   if (ierr .ne. 0) then
+      write(logunit,*) subname,' error in writing ocn cpl mesh '
+      call shr_sys_abort(subname//' ERROR in writing mesh ')
+   endif
+#endif
           if (drv_threading) call seq_comm_setnthreads(nthreads_GLOID)
           call t_drvstopf  ('CPL:OCNPRE1',cplrun=.true.,hashint=hashint(3))
        endif
@@ -4301,15 +4425,8 @@ contains
   !----------------------------------------------------------------------------------
 
   subroutine cime_run_atmocn_setup(hashint)
-#ifdef MOABDEBUG
-   use seq_comm_mct,        only: num_moab_exports  ! used to count the steps for moab files
-   use iMOAB, only: iMOAB_WriteMesh
-   use seq_comm_mct , only : mboxid
-#endif
+
    integer, intent(inout) :: hashint(:)
-#ifdef MOABDEBUG
-   character*32             :: outfile, wopts, lnum
-#endif
 
     ! call prep_ocn_calc_i2x_ox_moab() ! this does projection from ice to ocean on coupler, by simply matching
     if (iamin_CPLID) then

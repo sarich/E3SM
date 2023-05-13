@@ -1741,6 +1741,18 @@ contains
           call seq_map_map(mapper_So2a, o2x_ox, o2x_ax(emi),&
                fldlist=seq_flds_o2x_states,norm=.true., &
                avwts_s=fractions_ox(efi),avwtsfld_s='ofrac')
+#ifdef MOABDEBUG
+            ! projections on atm 
+         write(lnum,"(I0.2)")num_moab_exports
+         outfile = 'OcnCplAfterMapSo2a'//trim(lnum)//'.h5m'//C_NULL_CHAR
+         wopts   = ';PARALLEL=WRITE_PART'//C_NULL_CHAR !
+         ierr = iMOAB_WriteMesh(mboxid, trim(outfile), trim(wopts))
+         if (ierr .ne. 0) then
+            write(logunit,*) subname,' error in writing ocean to atm projection'
+            call shr_sys_abort(subname//' ERROR in writing ocean to atm projection')
+         endif
+#endif
+
        else
           call seq_map_map(mapper_So2a, o2x_ox, o2x_ax(emi),&
                fldlist=seq_flds_o2x_states,norm=.true.)

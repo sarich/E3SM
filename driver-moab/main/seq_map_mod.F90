@@ -665,11 +665,12 @@ end subroutine moab_map_init_rcfile
             deallocate(wghts, targtags)
 
             ! put the values back on the source mesh
-            ierr = iMOAB_SetDoubleTagStorage (mapper%src_mbid, fldlist_moab, arrsize_tgt , mapper%tag_entity_type, targtags_ini(1,1))
+            ierr = iMOAB_SetDoubleTagStorage (mapper%src_mbid, fldlist_moab, arrsize_src , mapper%tag_entity_type, targtags_ini(1,1))
             if (ierr .ne. 0) then
                write(logunit,*) subname,' error setting source tag values ', mapper%mbname
-               call shr_sys_abort(subname//' ERROR etting source tag values') ! serious enough
+               call shr_sys_abort(subname//' ERROR setting source tag values') ! serious enough
             endif
+            deallocate(targtags_ini)
 
          endif ! end normalization
 

@@ -563,7 +563,13 @@ end subroutine moab_map_init_rcfile
                do j = 1, lsize_src
                  targtags(j,:)= targtags(j,:)*wghts(j)
                enddo
-
+#ifdef MOABDEBUG
+         if (seq_comm_iamroot(CPLID)) then
+            write(logunit, *) subname,' iMOAB projection mapper: ', mapper%mbname, ' normalize nfields=', &
+               nfields, ' arrsize_src on root:', arrsize_src, ' shape(targtags_ini)=', shape(targtags_ini)
+            call shr_sys_flush(logunit)
+         endif
+#endif
                ! put the new values on the mesh for later mapping
                ierr = iMOAB_SetDoubleTagStorage (mapper%src_mbid, fldlist_moab, arrsize_src , mapper%tag_entity_type, targtags(1,1))
                if (ierr .ne. 0) then
@@ -663,14 +669,21 @@ end subroutine moab_map_init_rcfile
             endif
             
             deallocate(wghts, targtags)
-
-            ! put the values back on the source mesh
-            ierr = iMOAB_SetDoubleTagStorage (mapper%src_mbid, fldlist_moab, arrsize_src , mapper%tag_entity_type, targtags_ini(1,1))
-            if (ierr .ne. 0) then
-               write(logunit,*) subname,' error setting source tag values ', mapper%mbname
-               call shr_sys_abort(subname//' ERROR setting source tag values') ! serious enough
+            if (mbpresent) then
+#ifdef MOABDEBUG
+               if (seq_comm_iamroot(CPLID)) then
+                  write(logunit, *) subname,' iMOAB projection mapper: ', mapper%mbname, ' shape(targtags_ini)=', shape(targtags_ini)
+                  call shr_sys_flush(logunit)
+               endif
+#endif
+               ! put the values back on the source mesh
+               ierr = iMOAB_SetDoubleTagStorage (mapper%src_mbid, fldlist_moab, arrsize_src , mapper%tag_entity_type, targtags_ini(1,1))
+               if (ierr .ne. 0) then
+                  write(logunit,*) subname,' error setting source tag values ', mapper%mbname
+                  call shr_sys_abort(subname//' ERROR setting source tag values') ! serious enough
+               endif
+               deallocate(targtags_ini)
             endif
-            deallocate(targtags_ini)
 
          endif ! end normalization
 

@@ -163,6 +163,8 @@ contains
     integer arrsize  ! for setting the r2x fields on land to 0
     integer ent_type ! for setting tags
     real (kind=r8) , allocatable :: tmparray (:) ! used to set the r2x fields to 0
+    real (kind=r8) :: boxeps
+    integer :: gnomonic
 
 #endif
     character(*), parameter  :: subname = '(prep_lnd_init)'
@@ -255,7 +257,9 @@ contains
                mapper_Fr2l%src_context = rof(1)%cplcompid
                mapper_Fr2l%intx_context = lnd(1)%cplcompid
             else
-              ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbrxid, mblxid, mbintxrl)
+              boxeps = 1.e-6
+              gnomonic = 1
+              ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbrxid, mblxid, mbintxrl, boxeps, gnomonic)
               if (ierr .ne. 0) then
                 write(logunit,*) subname,' error in computing   rof lnd intx'
                 call shr_sys_abort(subname//' ERROR in computing  rof lnd intx')
@@ -413,7 +417,9 @@ contains
               if (iamroot_CPLID) then
                 write(logunit,*) 'iMOAB intersection between atm and land with id:', idintx
               endif
-              ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbaxid, mblxid, mbintxal)
+              boxeps = 1.e-6
+              gnomonic = 1
+              ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbaxid, mblxid, mbintxal, boxeps, gnomonic)
               if (ierr .ne. 0) then
                 write(logunit,*) subname,' error in computing atm lnd intx'
                 call shr_sys_abort(subname//' ERROR in computing atm lnd intx')

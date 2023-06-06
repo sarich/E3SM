@@ -169,6 +169,8 @@ contains
    character(CXX)           :: tagName
    integer                  :: context_id ! we will use a special context for the extra flux ocean instance
    logical                  :: no_match ! used to force a new mapper
+   real (kind=r8) :: boxeps
+   integer :: gnomonic
 
    !---------------------------------------------------------------
 
@@ -250,7 +252,9 @@ contains
               write(logunit,*) subname,' error in registering atm ocn intx'
               call shr_sys_abort(subname//' ERROR in registering atm ocn intx')
             endif
-            ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mboxid, mbaxid, mbintxoa)
+            boxeps = 1.e-6
+            gnomonic = 1
+            ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mboxid, mbaxid, mbintxoa, boxeps, gnomonic)
             if (ierr .ne. 0) then
               write(logunit,*) subname,' error in computing ocn atm intx'
               call shr_sys_abort(subname//' ERROR in computing ocn atm intx')
@@ -456,7 +460,9 @@ contains
               write(logunit,*) subname,' error in registering ice atm intx'
               call shr_sys_abort(subname//' ERROR in registering ice atm intx')
             endif
-            ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbixid, mbaxid, mbintxia)
+            boxeps = 1.e-6
+            gnomonic = 1
+            ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbixid, mbaxid, mbintxia, boxeps, gnomonic)
             if (ierr .ne. 0) then
               write(logunit,*) subname,' error in computing ice atm intx'
               call shr_sys_abort(subname//' ERROR in computing ice atm intx')
@@ -621,7 +627,9 @@ contains
                if (iamroot_CPLID) then
                   write(logunit,*) 'iMOAB intersection between atm and land with id:', idintx
                endif
-               ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mblxid, mbaxid, mbintxla)
+               boxeps = 1.e-6
+               gnomonic = 1
+               ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mblxid, mbaxid, mbintxla, boxeps, gnomonic)
                if (ierr .ne. 0) then
                   write(logunit,*) subname,' error in computing atm lnd intx'
                   call shr_sys_abort(subname//' ERROR in computing atm lnd intx')

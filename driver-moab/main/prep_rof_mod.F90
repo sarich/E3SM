@@ -207,6 +207,8 @@ contains
    integer                  :: tagtype, numco, tagindex
    character(CXX)           :: tagName
    integer nvert(3), nvise(3), nbl(3), nsurf(3), nvisBC(3) ! for moab info
+   real (kind=r8) :: boxeps
+   integer :: gnomonic
 
     !---------------------------------------------------------------
 
@@ -338,7 +340,9 @@ contains
                mapper_Fl2r%src_context = lnd(1)%cplcompid
                mapper_Fl2r%intx_context = rof(1)%cplcompid
             else
-               ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mblxid, mbrxid, mbintxlr)
+               boxeps = 1.e-6
+               gnomonic = 1
+               ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mblxid, mbrxid, mbintxlr, boxeps, gnomonic)
                if (ierr .ne. 0) then
                write(logunit,*) subname,' error in computing  land rof intx'
                call shr_sys_abort(subname//' ERROR in computing land rof intx')
@@ -503,7 +507,9 @@ contains
               write(logunit,*) subname,' error in registering atm rof intx'
               call shr_sys_abort(subname//' ERROR in registering atm rof intx')
             endif
-            ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbaxid, mbrxid, mbintxar)
+            boxeps = 1.e-6
+            gnomonic = 1
+            ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbaxid, mbrxid, mbintxar, boxeps, gnomonic)
             if (ierr .ne. 0) then
               write(logunit,*) subname,' error in computing  atm rof intx'
               call shr_sys_abort(subname//' ERROR in computing atm rof intx')

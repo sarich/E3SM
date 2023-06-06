@@ -266,6 +266,8 @@ contains
     integer arrsize  ! for setting the r2x fields on land to 0
     integer ent_type ! for setting tags
     real (kind=r8) , allocatable :: tmparray (:) ! used to set the r2x fields to 0
+    real (kind=r8) :: boxeps
+    integer  :: gnomonic
 
     !---------------------------------------------------------------
 
@@ -388,7 +390,9 @@ contains
               write(logunit,*) subname,' error in registering atm ocn intx'
               call shr_sys_abort(subname//' ERROR in registering atm ocn intx')
             endif
-            ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbaxid, mboxid, mbintxao)
+            gnomonic = 0 ! not gnomonic for bilinear map
+            boxeps = 2.e-1 ! relatively large
+            ierr =  iMOAB_ComputeMeshIntersectionOnSphere (mbaxid, mboxid, mbintxao, boxeps, gnomonic)
             if (ierr .ne. 0) then
               write(logunit,*) subname,' error in computing atm ocn intx'
               call shr_sys_abort(subname//' ERROR in computing atm ocn intx')

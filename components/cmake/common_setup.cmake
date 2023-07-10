@@ -264,23 +264,22 @@ if (USE_KOKKOS)
                NO_DEFAULT_PATH)
 endif()
 
-# JGF: No one seems to be using this
-# if (USE_MOAB)
-#   if (MOAB_PATH)
-#     set(CPPDEFS "${CPPDEFS} -DHAVE_MOAB")
-#     if (NOT INC_MOAB)
-#       set(INC_MOAB ${MOAB_PATH}/include)
-#     endif()
-#     if (NOT LIB_MOAB)
-#       set(LIB_MOAB ${MOAB_PATH}/lib)
-#     endif()
-#   else()
-#     message(FATAL_ERROR "MOAB_PATH must be defined when USE_MOAB is TRUE")
-#   endif()
+if (COMP_INTERFACE STREQUAL "moab")
+  if (MOAB_PATH)
+    set(CPPDEFS "${CPPDEFS} -DHAVE_MOAB")
+    set(USE_CXX TRUE)
+    if (NOT INC_MOAB)
+      set(INC_MOAB ${MOAB_PATH}/include)
+    endif()
+    if (NOT LIB_MOAB)
+      set(LIB_MOAB ${MOAB_PATH}/lib)
+    endif()
+  else()
+    message(FATAL_ERROR "MOAB_PATH must be defined when using moab driver")
+  endif()
 
-#   # # get the "IMESH_LIBS" list as an env var
-#   #include $(LIB_MOAB)/iMesh-Defs.inc
-# endif()
+ include(${MOAB_PATH}/lib/cmake/MOAB/MOABConfig.cmake)
+endif()
 
 # Set HAVE_SLASHPROC on LINUX systems which are not bluegene or Darwin (OSx)
 string(FIND "${CPPDEFS}" "-DLINUX" HAS_DLINUX)
@@ -369,7 +368,7 @@ else()
   list(APPEND INCLDIR "${INC_NETCDF_C}" "${INC_NETCDF_FORTRAN}")
 endif()
 
-foreach(ITEM MOD_NETCDF INC_MPI INC_PNETCDF INC_PETSC INC_TRILINOS INC_ALBANY) # INC_MOAB)
+foreach(ITEM MOD_NETCDF INC_MPI INC_PNETCDF INC_PETSC INC_TRILINOS INC_ALBANY INC_MOAB)
   if (${ITEM})
     list(APPEND INCLDIR "${${ITEM}}")
   endif()
@@ -454,10 +453,10 @@ if (USE_ALBANY)
   set(SLIBS "${SLIBS} ${ALBANY_LINK_LIBS}")
 endif()
 
-# Add MOAB libraries.  These are defined in the MOAB_LINK_LIBS env var that was included above
-# if (USE_MOAB)
-#   set(SLIBS "${SLIBS} ${IMESH_LIBS}")
-# endif()
+# Add MOAB libraries.
+if (COMP_INTERFACE STREQUAL "moab")
+  set(SLIBS "${SLIBS} ${MOAB_LIBRARIES}")
+endif()
 
 # Add libraries and flags that we need on the link line when C++ code is included
 if (USE_CXX)

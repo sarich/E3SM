@@ -103,13 +103,7 @@ module phys_grid
    use cam_abortutils,   only: endrun
    use perf_mod
    use cam_logfile,      only: iulog
-<<<<<<< HEAD
    use iop_data_mod,     only: single_column, scmlat, scmlon, scm_multcols
-=======
-   ! debug chunks
-   use shr_file_mod,     only: shr_file_getUnit, shr_file_freeUnit
-   use scamMod,          only: single_column, scmlat, scmlon
->>>>>>> sarich/moab/update-moab-driver
    use shr_const_mod,    only: SHR_CONST_PI
    use dycore,           only: dycore_is
    use units,            only: getunit, freeunit

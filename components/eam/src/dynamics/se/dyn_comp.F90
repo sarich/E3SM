@@ -12,6 +12,9 @@ Module dyn_comp
   use time_manager, only: is_first_step
   use spmd_utils,  only : iam, npes_cam => npes
   use pio,         only: file_desc_t
+#ifdef HAVE_MOAB
+  use cam_control_mod  , only: nsrest
+#endif
 
   implicit none
   private
@@ -269,7 +272,14 @@ CONTAINS
     end if
 
 #ifdef HAVE_MOAB
-    call create_moab_meshes(par, elem)
+    if (nsrest==0) then
+      if(par%masterproc) then
+        write(iulog,*) " "
+        write(iulog,*) "create moab meshes"
+        write(iulog,*) " "
+      endif
+      call create_moab_meshes(par, elem)
+    endif
 #endif
     ! Define the CAM grids (this has to be after dycore spinup).
     ! Physics-grid will be defined later by phys_grid_init

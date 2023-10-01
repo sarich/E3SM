@@ -96,6 +96,10 @@ module seq_rest_mod
   public :: seq_rest_write  ! write cpl7 restart data
   public :: seq_rest_mb_write ! read  cpl7_moab restart data
 
+#ifdef MOABDEBUG
+  public :: write_moab_state ! debug, write files 
+#endif
+
   ! !PUBLIC DATA MEMBERS:
 
   ! no public data
@@ -1336,5 +1340,71 @@ subroutine seq_rest_mb_read(rest_file, infodata, samegrid_al)
 
   end subroutine seq_rest_mb_write
   !===============================================================================
+
+#ifdef MOABDEBUG
+  subroutine  write_moab_state ( before_reading ) ! debug, write files 
+    use seq_comm_mct,     only: mbaxid, mbixid, mboxid, mblxid, mbrxid, mbofxid ! coupler side instances
+
+    implicit none
+
+    type(logical)       , intent(in)    :: before_reading    ! driver clock
+    character*32             :: outfile, wopts, prefx
+    integer ierr;
+    character(len=*),parameter :: subname = "(write_moab_state) "
+
+    prefx = 'After_'
+    wopts   = ';PARALLEL=WRITE_PART'//C_NULL_CHAR !
+    if ( before_reading ) prefx = 'Before_'
+    if (mbrxid .ge. 0 ) then !  we are on coupler pes, for sure
+      outfile = trim(prefx)//'RofCpl.h5m'//C_NULL_CHAR
+      ierr = iMOAB_WriteMesh(mbrxid, trim(outfile), trim(wopts))
+      if (ierr .ne. 0) then
+         write(logunit,*) subname,' error in writing rofx file  '
+         call shr_sys_abort(subname//' ERROR in writing rofx file ')
+      endif
+    endif
+    if (mbaxid .ge. 0 ) then !  we are on coupler pes, for sure
+      outfile = trim(prefx)//'AtmCpl.h5m'//C_NULL_CHAR
+      ierr = iMOAB_WriteMesh(mbaxid, trim(outfile), trim(wopts))
+      if (ierr .ne. 0) then
+         write(logunit,*) subname,' error in writing atmx file  '
+         call shr_sys_abort(subname//' ERROR in writing atmx file ')
+      endif
+    endif
+    if (mbixid .ge. 0 ) then !  we are on coupler pes, for sure
+      outfile = trim(prefx)//'IceCpl.h5m'//C_NULL_CHAR
+      ierr = iMOAB_WriteMesh(mbixid, trim(outfile), trim(wopts))
+      if (ierr .ne. 0) then
+         write(logunit,*) subname,' error in writing icex file  '
+         call shr_sys_abort(subname//' ERROR in writing icex file ')
+      endif
+    endif
+    if (mboxid .ge. 0 ) then !  we are on coupler pes, for sure
+      outfile = trim(prefx)//'OcnCpl.h5m'//C_NULL_CHAR
+      ierr = iMOAB_WriteMesh(mboxid, trim(outfile), trim(wopts))
+      if (ierr .ne. 0) then
+         write(logunit,*) subname,' error in writing ocnx file  '
+         call shr_sys_abort(subname//' ERROR in writing ocnx file ')
+      endif
+    endif
+    if (mblxid .ge. 0 ) then !  we are on coupler pes, for sure
+      outfile = trim(prefx)//'LndCpl.h5m'//C_NULL_CHAR
+      ierr = iMOAB_WriteMesh(mblxid, trim(outfile), trim(wopts))
+      if (ierr .ne. 0) then
+         write(logunit,*) subname,' error in writing lndx file  '
+         call shr_sys_abort(subname//' ERROR in writing lndx file ')
+      endif
+    endif
+    if (mbofxid .ge. 0 ) then !  we are on coupler pes, for sure
+      outfile = trim(prefx)//'OcnExCpl.h5m'//C_NULL_CHAR
+      ierr = iMOAB_WriteMesh(mbofxid, trim(outfile), trim(wopts))
+      if (ierr .ne. 0) then
+         write(logunit,*) subname,' error in writing ocnextra file  '
+         call shr_sys_abort(subname//' ERROR in writing ocnextra file ')
+      endif
+    endif
+
+  end subroutine  write_moab_state 
+#endif
 
 end module seq_rest_mod

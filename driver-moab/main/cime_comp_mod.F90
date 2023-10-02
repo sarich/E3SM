@@ -128,7 +128,7 @@ module cime_comp_mod
   ! restart file routines
   use seq_rest_mod, only : seq_rest_read, seq_rest_mb_read, seq_rest_write, seq_rest_mb_write
 #ifdef MOABDEBUG
-  use seq_rest_mod, only :: write_moab_state
+  use seq_rest_mod, only : write_moab_state
 #endif
 
   ! flux calc routines

@@ -1344,6 +1344,8 @@ subroutine seq_rest_mb_read(rest_file, infodata, samegrid_al)
 #ifdef MOABDEBUG
   subroutine  write_moab_state ( before_reading ) ! debug, write files 
     use seq_comm_mct,     only: mbaxid, mbixid, mboxid, mblxid, mbrxid, mbofxid ! coupler side instances
+    use iso_c_binding 
+    use iMOAB, only:  iMOAB_WriteMesh
 
     implicit none
 

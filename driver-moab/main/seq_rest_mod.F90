@@ -54,6 +54,7 @@ module seq_rest_mod
   use prep_ocn_mod,    only: prep_ocn_get_x2oacc_ox
   use prep_ocn_mod,    only: prep_ocn_get_x2oacc_ox_cnt
   ! moab version
+  use prep_ocn_mod,    only: prep_ocn_get_x2oacc_om
   use prep_ocn_mod,    only: prep_ocn_get_x2oacc_om_cnt
 #ifdef SUMMITDEV_PGI
   use prep_ocn_mod,    only: dummy_pgibugfix
@@ -75,7 +76,6 @@ module seq_rest_mod
   use seq_flds_mod, only: seq_flds_a2x_fields, seq_flds_xao_fields, seq_flds_o2x_fields, seq_flds_x2o_fields
   use seq_flds_mod, only: seq_flds_i2x_fields, seq_flds_r2x_fields
 
-  use prep_ocn_mod, only: prep_ocn_get_x2oacc_om
   use prep_rof_mod, only: prep_rof_get_o2racc_om ! return a pointer to a moab matrix
 
   use prep_rof_mod, only: prep_rof_get_l2racc_lm_cnt

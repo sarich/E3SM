@@ -939,7 +939,7 @@ CONTAINS
     do c = begchunk, endchunk
        ncols = get_ncols_p(c)
        do i=1,ncols
-          n e n+1
+          n = n+1
           data(n) = 1._r8 ! mask
        end do
     end do

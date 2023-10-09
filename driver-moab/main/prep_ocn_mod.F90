@@ -264,7 +264,7 @@ contains
     integer                  :: rank_on_cpl ! just for debugging
 ! these are just to zero out r2x fields on ocean
     integer nvert(3), nvise(3), nbl(3), nsurf(3), nvisBC(3) ! for moab info
-    integer  mlsize ! moab land size
+    integer  mlsize ! moab local ocean size 
     integer  nrflds  ! number of rof fields projected on land
     integer arrsize  ! for setting the r2x fields on land to 0
     integer ent_type ! for setting tags
@@ -366,7 +366,17 @@ contains
        ! during "first_time" entering merge routine; this was wrong
        ! allocate accumulation variable , parallel to x2o_om
        noflds = mct_aVect_nRattr(x2o_ox) ! these are saved after first time
-       allocate(x2oacc_om(lsize_o, noflds)) 
+       ! size of the x2oacc_om depends on the size of the ocean mesh locally 
+            
+       ! find out the number of local elements in moab mesh ocean instance on coupler
+       ierr  = iMOAB_GetMeshInfo ( mboxid, nvert, nvise, nbl, nsurf, nvisBC )
+       if (ierr .ne. 0) then
+          write(logunit,*) subname,' cant get size of ocn mesh'
+          call shr_sys_abort(subname//' ERROR in getting size of ocn mesh')
+       endif
+         ! ocn is cell mesh on coupler side
+       mlsize = nvise(1)
+       allocate(x2oacc_om(mlsize, noflds)) 
        x2oacc_om_cnt = 0
        x2oacc_om(:,:)=0.
 
